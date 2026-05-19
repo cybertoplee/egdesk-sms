@@ -1,0 +1,45 @@
+import { NextResponse } from 'next/server';
+import { queryTable, insertRows, deleteRows } from '../../../../egdesk-helpers';
+
+export async function GET() {
+  try {
+    const result = await queryTable('crm_deliveries', {
+      orderBy: 'id',
+      orderDirection: 'DESC'
+    });
+    return NextResponse.json({ success: true, deliveries: result.rows });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+export async function POST(req: Request) {
+  try {
+    const data = await req.json();
+    const id = data.id || Date.now().toString();
+    await insertRows('crm_deliveries', [{
+      id,
+      customer_name: data.customerName,
+      customer_phone: data.customerPhone,
+      address: data.address,
+      courier: data.courier || '대한통운',
+      tracking_number: data.trackingNumber || '',
+      status: data.status || '상품준비중'
+    }]);
+    return NextResponse.json({ success: true, id });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+    if (!id) return NextResponse.json({ success: false, error: 'ID required' }, { status: 400 });
+    await deleteRows('crm_deliveries', { filters: { id } });
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
