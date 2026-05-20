@@ -20,12 +20,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" suppressHydrationWarning>
-      <body className={`${inter.className} min-h-screen flex bg-slate-50 text-slate-900 antialiased`} suppressHydrationWarning>
+    <html lang="ko" className="h-full" suppressHydrationWarning>
+      <body className={`${inter.className} h-full overflow-hidden flex bg-slate-50 text-slate-900 antialiased`} suppressHydrationWarning>
         <SidebarWrapper>
           <Sidebar />
         </SidebarWrapper>
-        <main className="flex-1 w-full h-full overflow-y-auto">
+        <main className="flex-1 overflow-y-auto">
           <MainContentWrapper>
             {children}
           </MainContentWrapper>

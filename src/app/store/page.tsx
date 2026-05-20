@@ -157,7 +157,10 @@ export default function StorefrontPage() {
     try {
       const res = await fetch('/api/products');
       const json = await res.json();
-      if (json.success) setProducts(json.products);
+      if (json.success) {
+        const storeProducts = json.products.filter((p: any) => p.category === '스토어용' || !p.category || p.category === '일반상품');
+        setProducts(storeProducts);
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -276,15 +279,18 @@ export default function StorefrontPage() {
   return (
     <div className="w-full">
       {/* Hero Section */}
-      <div className="relative bg-slate-900 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/30 to-purple-600/30"></div>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-24 relative z-10">
-          <div className="max-w-2xl">
-            <h1 className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight mb-6">
-              가장 완벽한 상품을<br />가장 빠르게 만나보세요
+      <div className="relative overflow-hidden bg-slate-900 text-white pb-12 pt-24 sm:pt-32 lg:pt-40">
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-1/2 -right-1/4 w-[1000px] h-[1000px] rounded-full bg-gradient-to-bl from-blue-500/30 to-purple-600/40 blur-3xl opacity-60 animate-pulse mix-blend-screen" style={{ animationDuration: '8s' }}></div>
+          <div className="absolute -bottom-1/2 -left-1/4 w-[800px] h-[800px] rounded-full bg-gradient-to-tr from-cyan-400/20 to-blue-600/30 blur-3xl opacity-50 mix-blend-screen"></div>
+        </div>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center sm:text-left">
+          <div className="max-w-3xl">
+            <h1 className="text-5xl sm:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-slate-300 tracking-tight mb-8 leading-[1.1]">
+              가장 완벽한 상품을<br />가장 빠르게.
             </h1>
-            <p className="text-lg text-slate-300 mb-8 font-medium">
-              최고의 품질을 자랑하는 다양한 상품들이 준비되어 있습니다. 지금 바로 확인하시고 간편하게 주문하세요.
+            <p className="text-lg sm:text-xl text-slate-300 mb-10 font-medium max-w-2xl leading-relaxed">
+              최고의 품질을 자랑하는 다양한 상품들이 준비되어 있습니다.<br className="hidden sm:block" />지금 바로 확인하시고 간편하게 주문하세요.
             </p>
           </div>
         </div>
@@ -292,9 +298,9 @@ export default function StorefrontPage() {
 
       {/* Product List Section */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="flex justify-between items-end mb-8">
-          <h2 className="text-2xl font-bold text-slate-800 flex items-center">
-            <ShoppingBag className="w-6 h-6 mr-2 text-blue-500" />
+        <div className="flex justify-between items-end mb-10">
+          <h2 className="text-3xl font-extrabold text-slate-800 flex items-center tracking-tight">
+            <ShoppingBag className="w-8 h-8 mr-3 text-blue-600" />
             전체 상품
           </h2>
         </div>
@@ -328,15 +334,11 @@ export default function StorefrontPage() {
                       <ShoppingBag className="w-12 h-12" />
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 flex items-center justify-center">
-                    <div className="opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 bg-white text-slate-900 font-bold px-6 py-3 rounded-full shadow-lg">
-                      주문하기
-                    </div>
-                  </div>
+
                 </div>
                 <div className="p-6 flex flex-col flex-grow">
                   <h3 className="text-xl font-bold text-slate-800 mb-2 group-hover:text-blue-600 transition-colors">{product.name}</h3>
-                  <p className="text-slate-500 text-sm mb-4 line-clamp-2 flex-grow">{product.description || '상세 설명이 없습니다.'}</p>
+                  <p className="text-slate-500 text-sm mb-4 line-clamp-2 flex-grow whitespace-pre-line">{product.description || '상세 설명이 없습니다.'}</p>
                   <div className="flex justify-between items-center mt-auto pt-4 border-t border-slate-50">
                     <span className="text-2xl font-black text-slate-900">{product.price === '상담후결정' ? '상담 후 결정' : (getNumericPrice(product.price) > 0 ? `${getNumericPrice(product.price).toLocaleString()}원` : '가격 문의')}</span>
                   </div>
@@ -349,57 +351,65 @@ export default function StorefrontPage() {
 
       {/* Order Modal */}
       {selectedProduct && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={closeModal}></div>
-          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="bg-white rounded-3xl w-full max-w-5xl shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-[90vh]">
             {/* Modal Header */}
-            <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-              <h3 className="text-lg font-bold text-slate-800">상품 주문하기</h3>
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
+              <h3 className="text-lg font-bold text-slate-800">상품 상세 및 주문하기</h3>
               <button onClick={closeModal} className="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-200 transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
             
-            {/* Modal Body */}
-            <div className="p-4 sm:p-6 overflow-y-auto">
-              {orderSuccess ? (
-                <div className="text-center py-12">
-                  <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <svg className="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
-                  </div>
-                  <h3 className="text-2xl font-bold text-slate-800 mb-2">주문이 완료되었습니다!</h3>
-                  <p className="text-slate-500 mb-6">주문 내역과 결제 안내 문자가 곧 발송됩니다.</p>
-                  
-                  <div className="bg-slate-50 rounded-2xl p-5 text-left w-full mb-6 border border-slate-100">
-                    <h4 className="text-sm font-bold text-slate-800 mb-2">무통장 입금 안내 (송금 결제)</h4>
-                    <p className="text-xs text-slate-500 mb-3">현재 결제는 계좌 송금 방식으로만 진행됩니다. 아래 계좌로 입금해 주세요.</p>
-                    <div className="bg-white p-3 rounded-xl border border-slate-200">
-                      <div className="font-mono text-sm font-bold text-slate-800">
-                        국민은행 123456-12-123456
-                        <span className="block text-xs text-slate-500 mt-1">예금주: 주식회사 이지데스크</span>
+            {/* Modal Body - 2 Columns on Desktop */}
+            <div className="flex flex-col md:flex-row overflow-y-auto md:overflow-hidden flex-1">
+              {/* Left Column: Product Info & Detail Image */}
+              <div className="md:w-1/2 p-6 md:p-8 md:overflow-y-auto border-b md:border-b-0 md:border-r border-slate-100 bg-slate-50/50">
+                <div className="w-full bg-white rounded-2xl shadow-sm overflow-hidden mb-6 border border-slate-100">
+                  {selectedProduct.detail_image_url ? (
+                    <img src={selectedProduct.detail_image_url} alt={selectedProduct.name} className="w-full object-cover" />
+                  ) : selectedProduct.main_image_url ? (
+                    <img src={selectedProduct.main_image_url} alt={selectedProduct.name} className="w-full aspect-square object-cover" />
+                  ) : (
+                    <div className="w-full aspect-square flex items-center justify-center text-slate-200 bg-slate-50"><ShoppingBag className="w-16 h-16" /></div>
+                  )}
+                </div>
+                <h4 className="font-extrabold text-slate-800 text-2xl md:text-3xl mb-3">{selectedProduct.name}</h4>
+                <p className="text-blue-600 font-black text-2xl mb-6">
+                  {selectedProduct.price === '상담후결정' ? '상담 후 결정' : (getNumericPrice(selectedProduct.price) > 0 ? `${getNumericPrice(selectedProduct.price).toLocaleString()}원` : '가격 문의')}
+                </p>
+                <div className="text-slate-600 leading-relaxed whitespace-pre-line bg-white p-6 rounded-2xl border border-slate-100">
+                  {selectedProduct.description || '상세 설명이 등록되지 않았습니다.'}
+                </div>
+              </div>
+
+              {/* Right Column: Order Form */}
+              <div className="md:w-1/2 p-6 md:p-8 md:overflow-y-auto">
+                {orderSuccess ? (
+                  <div className="text-center py-12 flex flex-col items-center justify-center h-full">
+                    <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <svg className="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
+                    <h3 className="text-2xl font-bold text-slate-800 mb-2">주문이 완료되었습니다!</h3>
+                    <p className="text-slate-500 mb-6">주문 내역과 결제 안내 문자가 곧 발송됩니다.</p>
+                    
+                    <div className="bg-slate-50 rounded-2xl p-5 text-left w-full mb-6 border border-slate-100">
+                      <h4 className="text-sm font-bold text-slate-800 mb-2">무통장 입금 안내 (송금 결제)</h4>
+                      <p className="text-xs text-slate-500 mb-3">현재 결제는 계좌 송금 방식으로만 진행됩니다. 아래 계좌로 입금해 주세요.</p>
+                      <div className="bg-white p-3 rounded-xl border border-slate-200">
+                        <div className="font-mono text-sm font-bold text-slate-800">
+                          국민은행 123456-12-123456
+                          <span className="block text-xs text-slate-500 mt-1">예금주: 주식회사 이지데스크</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <button onClick={closeModal} className="bg-slate-900 text-white font-bold py-3 px-8 rounded-xl hover:bg-slate-800 transition-colors w-full">
-                    확인
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <div className="flex gap-4 items-center mb-8 p-4 bg-blue-50 rounded-2xl">
-                    <div className="w-20 h-20 bg-white rounded-xl shadow-sm overflow-hidden shrink-0">
-                      {selectedProduct.main_image_url ? (
-                        <img src={selectedProduct.main_image_url} alt={selectedProduct.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-slate-200"><ShoppingBag className="w-8 h-8" /></div>
-                      )}
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-slate-800 text-lg">{selectedProduct.name}</h4>
-                      <p className="text-blue-600 font-bold">{selectedProduct.price === '상담후결정' ? '상담 후 결정' : (getNumericPrice(selectedProduct.price) > 0 ? `${getNumericPrice(selectedProduct.price).toLocaleString()}원` : '가격 문의')}</p>
-                    </div>
+                    <button onClick={closeModal} className="bg-slate-900 text-white font-bold py-3 px-8 rounded-xl hover:bg-slate-800 transition-colors w-full">
+                      확인
+                    </button>
                   </div>
+                ) : (
 
                   <form onSubmit={submitOrder} className="space-y-5">
                     <div>
@@ -443,7 +453,14 @@ export default function StorefrontPage() {
                       <label className="block text-sm font-bold text-slate-700 mb-3">수령 방식</label>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                         {(() => {
-                          const allowed = selectedProduct.available_methods ? selectedProduct.available_methods.split(',') : ['매장에서', '가져가기', '배달', '배송'];
+                          let allowed = ['매장에서', '가져가기', '배달', '배송'];
+                          if (selectedProduct.available_methods) {
+                            if (Array.isArray(selectedProduct.available_methods)) {
+                              allowed = selectedProduct.available_methods;
+                            } else if (typeof selectedProduct.available_methods === 'string') {
+                              allowed = selectedProduct.available_methods.split(',');
+                            }
+                          }
                           const renderMethod = (methodName: string, Icon: any) => {
                             const isAllowed = allowed.includes(methodName);
                             const isSelected = form.deliveryMethod === methodName;
@@ -459,7 +476,7 @@ export default function StorefrontPage() {
                             <>
                               {renderMethod('매장에서', Store)}
                               {renderMethod('가져가기', Package)}
-                              {renderMethod('배달', Send)}
+                              {renderMethod('배달', MapPin)}
                               {renderMethod('배송', Truck)}
                             </>
                           );
@@ -538,16 +555,16 @@ export default function StorefrontPage() {
                     <button 
                       type="submit" 
                       disabled={isSubmitting}
-                      className={`w-full py-4 rounded-xl font-bold text-lg text-white transition-all flex justify-center items-center ${isSubmitting ? 'bg-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-blue-500/30'}`}
+                      className={`w-full py-4 font-bold text-lg text-white transition-all duration-300 flex justify-center items-center rounded-xl shadow-lg border border-transparent ${isSubmitting ? 'bg-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 hover:shadow-blue-500/50 active:scale-[0.98]'}`}
                     >
                       {isSubmitting ? '처리 중...' : (selectedProduct.price === '상담후결정' ? '상담/견적 요청하기' : '주문 접수하기')}
                     </button>
                   </form>
-                </>
               )}
             </div>
           </div>
         </div>
+      </div>
       )}
 
       {/* Voice Wizard Modal */}

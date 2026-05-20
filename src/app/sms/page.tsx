@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Send, Smartphone, ScanLine, FileText, CheckCircle, AlertTriangle, X, Bot, Sparkles } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Send, Smartphone, ScanLine, FileText, CheckCircle, AlertTriangle, X, Bot, Sparkles, Upload, Download } from "lucide-react";
+import * as XLSX from "xlsx";
 
 interface Customer {
   id: number;
@@ -51,6 +52,12 @@ export default function SmsPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   
+  // Excel Upload States
+  const [targetMode, setTargetMode] = useState<'db' | 'excel'>('db');
+  const [excelCustomers, setExcelCustomers] = useState<Customer[]>([]);
+  const [selectedExcelIds, setSelectedExcelIds] = useState<Set<number>>(new Set());
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   // Anti-Spam States
   const [isAd, setIsAd] = useState(false);
   const [adHeader, setAdHeader] = useState("(광고) [EGDesk]");
@@ -93,13 +100,14 @@ export default function SmsPage() {
       const res = await fetch('/api/ai-sms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: aiPrompt, customers })
+        body: JSON.stringify({ prompt: aiPrompt, customers: targetMode === 'db' ? customers : excelCustomers })
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
       
       if (data.targetIds && data.targetIds.length > 0) {
-        setSelectedIds(new Set(data.targetIds));
+        if (targetMode === 'db') setSelectedIds(new Set(data.targetIds));
+        else setSelectedExcelIds(new Set(data.targetIds));
       } else {
         alert("AI가 조건에 맞는 고객을 찾지 못했습니다.");
       }
@@ -222,18 +230,87 @@ export default function SmsPage() {
   };
 
   const toggleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.checked) {
-      setSelectedIds(new Set(customers.map(c => c.id)));
+    if (targetMode === 'db') {
+      if (e.target.checked) setSelectedIds(new Set(customers.map(c => c.id)));
+      else setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set());
+      if (e.target.checked) setSelectedExcelIds(new Set(excelCustomers.map(c => c.id)));
+      else setSelectedExcelIds(new Set());
     }
   };
 
   const toggleSelect = (id: number) => {
-    const newSet = new Set(selectedIds);
-    if (newSet.has(id)) newSet.delete(id);
-    else newSet.add(id);
-    setSelectedIds(newSet);
+    if (targetMode === 'db') {
+      const newSet = new Set(selectedIds);
+      if (newSet.has(id)) newSet.delete(id);
+      else newSet.add(id);
+      setSelectedIds(newSet);
+    } else {
+      const newSet = new Set(selectedExcelIds);
+      if (newSet.has(id)) newSet.delete(id);
+      else newSet.add(id);
+      setSelectedExcelIds(newSet);
+    }
+  };
+
+  const handleExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws);
+        
+        const parsedCustomers: Customer[] = data.map((row: any, index) => {
+          const name = row['이름'] || row['성명'] || row['name'] || row['Name'] || '';
+          const phone = row['연락처'] || row['전화번호'] || row['휴대폰'] || row['phone'] || row['Phone'] || '';
+          const tags = row['태그'] || row['메모'] || row['tags'] || row['Tags'] || '엑셀업로드';
+          
+          return {
+            id: -(index + 1), // Use negative IDs for excel customers
+            name: String(name),
+            phone: String(phone),
+            tags: String(tags)
+          };
+        }).filter(c => c.name && c.phone);
+
+        if (parsedCustomers.length === 0) {
+          alert("유효한 데이터가 없습니다. '이름', '연락처' 열이 첫 번째 줄(헤더)에 포함되어 있는지 확인해주세요.");
+          return;
+        }
+
+        setExcelCustomers(parsedCustomers);
+        setSelectedExcelIds(new Set(parsedCustomers.map(c => c.id)));
+        alert(`${parsedCustomers.length}명의 고객 명단을 성공적으로 불러왔습니다.`);
+      } catch (err) {
+        alert("엑셀 파일을 읽는 중 오류가 발생했습니다.");
+      }
+    };
+    reader.readAsBinaryString(file);
+    if (e.target) e.target.value = '';
+  };
+
+  const handleDeleteSelectedExcel = () => {
+    if (selectedExcelIds.size === 0) return;
+    if (!confirm(`선택한 ${selectedExcelIds.size}명의 명단을 삭제하시겠습니까?`)) return;
+    
+    setExcelCustomers(prev => prev.filter(c => !selectedExcelIds.has(c.id)));
+    setSelectedExcelIds(new Set());
+  };
+
+  const downloadSampleExcel = () => {
+    const ws = XLSX.utils.json_to_sheet([
+      { 이름: "홍길동", 연락처: "010-1234-5678", 태그: "VIP" },
+      { 이름: "김철수", 연락처: "010-9876-5432", 태그: "단골" }
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "고객명단");
+    XLSX.writeFile(wb, "문자발송_엑셀업로드_양식.xlsx");
   };
 
   const insertVariable = (variable: string) => {
@@ -422,7 +499,11 @@ export default function SmsPage() {
       alert("구글 메시지 앱과 연동되어 있지 않습니다. 우측 상단의 [QR 코드로 연동하기] 버튼을 눌러 연동을 먼저 진행해주세요.");
       return;
     }
-    if (selectedIds.size === 0) {
+    if (targetMode === 'db' && selectedIds.size === 0) {
+      alert("발송 대상을 선택해주세요.");
+      return;
+    }
+    if (targetMode === 'excel' && selectedExcelIds.size === 0) {
       alert("발송 대상을 선택해주세요.");
       return;
     }
@@ -432,9 +513,12 @@ export default function SmsPage() {
     }
 
     setIsSending(true);
-    setSendProgress({ current: 0, total: selectedIds.size });
+    const totalSize = targetMode === 'db' ? selectedIds.size : selectedExcelIds.size;
+    setSendProgress({ current: 0, total: totalSize });
 
-    const selectedCustomers = customers.filter(c => selectedIds.has(c.id));
+    const selectedCustomers = targetMode === 'db' 
+      ? customers.filter(c => selectedIds.has(c.id))
+      : excelCustomers.filter(c => selectedExcelIds.has(c.id));
     const selectedProduct = products.find(p => p.id === selectedProductId);
 
     for (let i = 0; i < selectedCustomers.length; i++) {
@@ -711,59 +795,174 @@ export default function SmsPage() {
 
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold text-slate-800">발송 대상 선택 (DB 연동)</h2>
-              <button onClick={fetchCustomers} className="text-sm text-blue-600 hover:underline">새로고침</button>
+              <h2 className="text-lg font-bold text-slate-800">발송 대상 선택</h2>
+              <div className="flex bg-slate-100 p-1 rounded-lg">
+                <button 
+                  onClick={() => setTargetMode('db')}
+                  className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${targetMode === 'db' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  DB 연동
+                </button>
+                <button 
+                  onClick={() => setTargetMode('excel')}
+                  className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${targetMode === 'excel' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  엑셀 직접 업로드
+                </button>
+              </div>
             </div>
             
-            <div className="border border-slate-200 rounded-xl overflow-hidden h-64 overflow-y-auto">
-              <table className="w-full text-left text-sm relative">
-                <thead className="bg-slate-50 text-slate-600 sticky top-0 shadow-sm">
-                  <tr>
-                    <th className="p-4 w-12">
-                      <input 
-                        type="checkbox" 
-                        className="rounded text-blue-600" 
-                        checked={customers.length > 0 && selectedIds.size === customers.length}
-                        onChange={toggleSelectAll}
-                      />
-                    </th>
-                    <th className="p-4">이름</th>
-                    <th className="p-4">연락처</th>
-                    <th className="p-4">태그</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {customers.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="p-8 text-center text-slate-500">
-                        등록된 고객이 없습니다. 고객 관리 메뉴에서 등록해주세요.
-                      </td>
-                    </tr>
-                  ) : (
-                    customers.map(c => (
-                      <tr key={c.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => toggleSelect(c.id)}>
-                        <td className="p-4" onClick={(e) => e.stopPropagation()}>
+            {targetMode === 'db' ? (
+              <>
+                <div className="flex justify-end mb-2">
+                  <button onClick={fetchCustomers} className="text-sm text-blue-600 hover:underline">새로고침</button>
+                </div>
+                <div className="border border-slate-200 rounded-xl overflow-hidden h-64 overflow-y-auto">
+                  <table className="w-full text-left text-sm relative">
+                    <thead className="bg-slate-50 text-slate-600 sticky top-0 shadow-sm z-10">
+                      <tr>
+                        <th className="p-4 w-12">
                           <input 
                             type="checkbox" 
                             className="rounded text-blue-600" 
-                            checked={selectedIds.has(c.id)}
-                            onChange={() => toggleSelect(c.id)}
+                            checked={customers.length > 0 && selectedIds.size === customers.length}
+                            onChange={toggleSelectAll}
                           />
-                        </td>
-                        <td className="p-4 font-medium text-slate-800">{c.name}</td>
-                        <td className="p-4 text-slate-500">{c.phone}</td>
-                        <td className="p-4">
-                          {c.tags && <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs">{c.tags}</span>}
-                        </td>
+                        </th>
+                        <th className="p-4">이름</th>
+                        <th className="p-4">연락처</th>
+                        <th className="p-4">태그</th>
                       </tr>
-                    ))
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {customers.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="p-8 text-center text-slate-500">
+                            등록된 고객이 없습니다. 고객 관리 메뉴에서 등록해주세요.
+                          </td>
+                        </tr>
+                      ) : (
+                        customers.map(c => (
+                          <tr key={c.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => toggleSelect(c.id)}>
+                            <td className="p-4" onClick={(e) => e.stopPropagation()}>
+                              <input 
+                                type="checkbox" 
+                                className="rounded text-blue-600" 
+                                checked={selectedIds.has(c.id)}
+                                onChange={() => toggleSelect(c.id)}
+                              />
+                            </td>
+                            <td className="p-4 font-medium text-slate-800">{c.name}</td>
+                            <td className="p-4 text-slate-500">{c.phone}</td>
+                            <td className="p-4">
+                              {c.tags && <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs">{c.tags}</span>}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="mt-3 text-sm text-slate-500">
+                  총 {customers.length}명 중 {selectedIds.size}명 선택됨
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+                  <div className="text-sm text-slate-600">
+                    첫 줄에 <strong className="text-blue-600">이름, 연락처</strong> 열이 포함된 엑셀 파일을 업로드하세요.
+                  </div>
+                  <div className="flex space-x-2 w-full sm:w-auto">
+                    <button 
+                      onClick={downloadSampleExcel}
+                      className="px-3 py-2 text-sm text-slate-600 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 flex items-center justify-center flex-1 sm:flex-none"
+                    >
+                      <Download className="w-4 h-4 mr-1.5" />
+                      양식 다운로드
+                    </button>
+                    <input 
+                      type="file" 
+                      accept=".xlsx, .xls, .csv" 
+                      ref={fileInputRef}
+                      onChange={handleExcelUpload}
+                      className="hidden" 
+                    />
+                    <button 
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-3 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center justify-center flex-1 sm:flex-none shadow-sm"
+                    >
+                      <Upload className="w-4 h-4 mr-1.5" />
+                      엑셀 파일 첨부
+                    </button>
+                  </div>
+                </div>
+
+                <div className="border border-slate-200 rounded-xl overflow-hidden h-64 overflow-y-auto">
+                  <table className="w-full text-left text-sm relative">
+                    <thead className="bg-slate-50 text-slate-600 sticky top-0 shadow-sm z-10">
+                      <tr>
+                        <th className="p-4 w-12">
+                          <input 
+                            type="checkbox" 
+                            className="rounded text-blue-600" 
+                            checked={excelCustomers.length > 0 && selectedExcelIds.size === excelCustomers.length}
+                            onChange={toggleSelectAll}
+                          />
+                        </th>
+                        <th className="p-4">이름</th>
+                        <th className="p-4">연락처</th>
+                        <th className="p-4">태그</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {excelCustomers.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="p-12 text-center text-slate-500">
+                            <div className="flex flex-col items-center justify-center space-y-3">
+                              <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center">
+                                <FileText className="w-6 h-6 text-slate-400" />
+                              </div>
+                              <p>업로드된 고객 명단이 없습니다.<br/>우측 상단의 <strong>[엑셀 파일 첨부]</strong> 버튼을 눌러 파일을 등록해주세요.</p>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : (
+                        excelCustomers.map(c => (
+                          <tr key={c.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => toggleSelect(c.id)}>
+                            <td className="p-4" onClick={(e) => e.stopPropagation()}>
+                              <input 
+                                type="checkbox" 
+                                className="rounded text-blue-600" 
+                                checked={selectedExcelIds.has(c.id)}
+                                onChange={() => toggleSelect(c.id)}
+                              />
+                            </td>
+                            <td className="p-4 font-medium text-slate-800">{c.name}</td>
+                            <td className="p-4 text-slate-500">{c.phone}</td>
+                            <td className="p-4">
+                              {c.tags && <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs">{c.tags}</span>}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="mt-3 flex justify-between items-center text-sm text-slate-500">
+                  <span>총 {excelCustomers.length}명 중 {selectedExcelIds.size}명 선택됨</span>
+                  {selectedExcelIds.size > 0 && (
+                    <button 
+                      onClick={handleDeleteSelectedExcel}
+                      className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg border border-red-100 hover:bg-red-100 transition-colors flex items-center"
+                    >
+                      <X className="w-3.5 h-3.5 mr-1" />
+                      선택 삭제
+                    </button>
                   )}
-                </tbody>
-              </table>
-            </div>
-            <div className="mt-3 text-sm text-slate-500">
-              총 {customers.length}명 중 {selectedIds.size}명 선택됨
-            </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
 

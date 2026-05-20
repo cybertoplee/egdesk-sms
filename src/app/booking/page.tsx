@@ -32,8 +32,8 @@ export default function BookingPage() {
       const res = await fetch('/api/products');
       const json = await res.json();
       if (json.success) {
-        // Filter only '예약상품'
-        const bookingProducts = json.products.filter((p: any) => p.category === '예약상품');
+        // Filter only '예약용'
+        const bookingProducts = json.products.filter((p: any) => p.category === '예약용' || p.category === '예약상품');
         setProducts(bookingProducts);
       }
     } catch (e) {
@@ -185,7 +185,7 @@ export default function BookingPage() {
                 </div>
                 <div className="p-8 flex flex-col flex-grow text-center">
                   <h3 className="text-xl font-semibold text-slate-800 mb-3">{product.name}</h3>
-                  <p className="text-slate-500 text-sm mb-6 line-clamp-2 font-light">{product.description || '상세 설명이 없습니다.'}</p>
+                  <p className="text-slate-500 text-sm mb-6 line-clamp-2 font-light whitespace-pre-line">{product.description || '상세 설명이 없습니다.'}</p>
                   <div className="mt-auto">
                     <span className="text-lg font-medium text-slate-900">
                       {product.price === '상담후결정' ? '상담 후 결정' : (getNumericPrice(product.price) > 0 ? `${getNumericPrice(product.price).toLocaleString()}원` : '가격 문의')}

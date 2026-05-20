@@ -1,10 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
-import { PackageSearch, Plus, Trash2, ExternalLink } from "lucide-react";
+import { PackageSearch, Plus, Trash2, ExternalLink, Pencil, X } from "lucide-react";
 
 export default function ProductsPage() {
   const [data, setData] = useState<any[]>([]);
-  const [form, setForm] = useState({ name: '', price: '', url: '', description: '', main_image_url: '', detail_image_url: '', category: '식사류', isPriceTbd: false, available_methods: ['매장에서', '가져가기', '배달', '배송'] });
+  const [form, setForm] = useState({ name: '', price: '', url: '', description: '', main_image_url: '', detail_image_url: '', category: '스토어용', menu_category: '', isPriceTbd: false, available_methods: ['매장에서', '가져가기', '배달', '배송'] });
+  const [editTargetId, setEditTargetId] = useState<string|null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [hoverImage, setHoverImage] = useState<{url: string, x: number, y: number} | null>(null);
 
   useEffect(() => { fetchData(); }, []);
   
@@ -18,10 +21,12 @@ export default function ProductsPage() {
     e.preventDefault();
     if (!form.name) return alert('상품명은 필수입니다.');
     
+    const isEditing = !!editTargetId;
     const res = await fetch('/api/products', { 
-      method: 'POST', 
+      method: isEditing ? 'PUT' : 'POST', 
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        id: editTargetId,
         ...form,
         price: form.isPriceTbd ? '상담후결정' : form.price,
         available_methods: form.available_methods.join(',')
@@ -30,17 +35,67 @@ export default function ProductsPage() {
     
     const json = await res.json();
     if (json.success) { 
-      setForm({ name: '', price: '', url: '', description: '', main_image_url: '', detail_image_url: '', category: '식사류', isPriceTbd: false, available_methods: ['매장에서', '가져가기', '배달', '배송'] }); 
+      setForm({ name: '', price: '', url: '', description: '', main_image_url: '', detail_image_url: '', category: '스토어용', menu_category: '', isPriceTbd: false, available_methods: ['매장에서', '가져가기', '배달', '배송'] }); 
+      setEditTargetId(null);
       fetchData(); 
     } else {
-      alert("등록 실패: " + json.error);
+      alert("저장 실패: " + json.error);
     }
+  };
+
+  const handleEditClick = (product: any) => {
+    const isPriceTbd = product.price === '상담후결정';
+    setForm({
+      name: product.name || '',
+      price: isPriceTbd ? '' : (product.price || ''),
+      url: product.url || '',
+      description: product.description || '',
+      main_image_url: product.main_image_url || '',
+      detail_image_url: product.detail_image_url || '',
+      category: product.category || '스토어용',
+      menu_category: product.menu_category || '',
+      isPriceTbd,
+      available_methods: product.available_methods ? product.available_methods.split(',') : ['매장에서', '가져가기', '배달', '배송']
+    });
+    setEditTargetId(product.id);
+  };
+
+  const cancelEdit = () => {
+    setForm({ name: '', price: '', url: '', description: '', main_image_url: '', detail_image_url: '', category: '스토어용', menu_category: '', isPriceTbd: false, available_methods: ['매장에서', '가져가기', '배달', '배송'] });
+    setEditTargetId(null);
   };
 
   const deleteData = async (id: string) => {
     if(!confirm('정말 삭제하시겠습니까?')) return;
     const res = await fetch('/api/products?id=' + id, { method: 'DELETE' });
     if ((await res.json()).success) fetchData();
+  };
+  const existingCategories = Array.from(new Set(data.map(p => p.menu_category).filter(Boolean)));
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'main_image_url' | 'detail_image_url') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const json = await res.json();
+      if (json.success) {
+        setForm({ ...form, [field]: json.url });
+      } else {
+        alert('업로드 실패: ' + json.error);
+      }
+    } catch (err) {
+      alert('업로드 중 오류가 발생했습니다.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -50,8 +105,16 @@ export default function ProductsPage() {
         쇼핑몰 연동 상품 DB
       </h1>
       
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-        <h2 className="text-lg font-bold mb-4 text-slate-700">새 상품 등록</h2>
+      <div className="sticky top-0 z-20 pt-8 pb-4 -mt-8 -mx-8 px-8 bg-slate-50/95 backdrop-blur-md">
+      <div className={`bg-white p-6 rounded-2xl shadow-md border ${editTargetId ? 'border-blue-300 ring-4 ring-blue-50' : 'border-slate-100'}`}>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-bold text-slate-700">{editTargetId ? '상품 수정' : '새 상품 등록'}</h2>
+          {editTargetId && (
+            <button onClick={cancelEdit} className="text-sm text-slate-500 hover:text-slate-800 flex items-center bg-slate-100 px-3 py-1 rounded-lg">
+              <X className="w-4 h-4 mr-1"/> 취소
+            </button>
+          )}
+        </div>
         <form onSubmit={addData} className="flex flex-col gap-3">
           <div className="flex flex-col md:flex-row gap-3">
             <input 
@@ -75,87 +138,113 @@ export default function ProductsPage() {
                 <span>상담후결정</span>
               </label>
             </div>
-            <input 
-              type="text" 
-              placeholder="쇼핑몰 URL (선택)" 
-              value={form.url} 
-              onChange={e => setForm({...form, url: e.target.value})} 
-              className="flex-[2] border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-pink-500" 
-            />
             <select 
               value={form.category}
               onChange={e => setForm({...form, category: e.target.value})}
-              className="flex-[1] border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-pink-500 bg-white"
+              className="w-32 border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-pink-500 bg-white"
             >
-              <option value="일반상품">일반상품</option>
-              <option value="식사류">식사류</option>
-              <option value="안주류">안주류</option>
-              <option value="주류">주류</option>
-              <option value="음료">음료</option>
-              <option value="예약상품">예약상품</option>
+              <option value="스토어용">스토어용</option>
+              <option value="테이블용">테이블용</option>
+              <option value="예약용">예약용</option>
             </select>
+            <div className="flex-1">
+              <input 
+                type="text" 
+                list="category-options"
+                placeholder="카테고리 (예: 가전)" 
+                value={form.menu_category} 
+                onChange={e => setForm({...form, menu_category: e.target.value})} 
+                className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-pink-500" 
+              />
+              <datalist id="category-options">
+                {existingCategories.map((cat, idx) => (
+                  <option key={idx} value={cat as string} />
+                ))}
+              </datalist>
+            </div>
           </div>
-          <div className="flex flex-col md:flex-row gap-3">
-            <input 
-              type="text" 
-              placeholder="상세 설명 문구 (간략히)" 
+          <div className="flex flex-col gap-3">
+            <textarea 
+              placeholder="상세 설명 문구를 입력하세요 (엔터를 치면 줄바꿈이 됩니다)" 
               value={form.description} 
               onChange={e => setForm({...form, description: e.target.value})} 
-              className="flex-[2] border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-pink-500" 
-            />
-            <input 
-              type="text" 
-              placeholder="대표 이미지 URL" 
-              value={form.main_image_url} 
-              onChange={e => setForm({...form, main_image_url: e.target.value})} 
-              className="flex-[1] border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-pink-500 text-sm" 
-            />
-            <input 
-              type="text" 
-              placeholder="상세 이미지 URL" 
-              value={form.detail_image_url} 
-              onChange={e => setForm({...form, detail_image_url: e.target.value})} 
-              className="flex-[1] border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-pink-500 text-sm" 
+              className="w-full border rounded-lg px-3 py-3 outline-none focus:ring-2 focus:ring-pink-500 min-h-[100px] resize-y" 
             />
           </div>
-          
-          <div className="flex items-center gap-4 py-2">
-            <span className="text-sm font-bold text-slate-700">허용 수령 방식:</span>
-            {['매장에서', '가져가기', '배달', '배송'].map(method => (
-              <label key={method} className="flex items-center space-x-1 cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  checked={form.available_methods.includes(method)}
-                  onChange={(e) => {
-                    const newMethods = e.target.checked 
-                      ? [...form.available_methods, method] 
-                      : form.available_methods.filter(m => m !== method);
-                    setForm({...form, available_methods: newMethods});
-                  }}
-                  className="rounded text-pink-500 focus:ring-pink-500"
-                />
-                <span className="text-sm text-slate-600">{method}</span>
-              </label>
-            ))}
+          <div className="flex flex-row gap-3 w-full">
+            <div className="flex-1 flex flex-col justify-center min-w-0">
+              <input 
+                type="text" 
+                placeholder="쇼핑몰 URL (선택)" 
+                value={form.url} 
+                onChange={e => setForm({...form, url: e.target.value})} 
+                className="w-full h-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-pink-500 min-h-[58px]" 
+              />
+            </div>
+            <label className="flex-1 border rounded-lg px-3 py-2 flex flex-col bg-white relative justify-center min-h-[58px] min-w-0 cursor-pointer hover:bg-slate-50 transition-colors group">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-sm font-semibold text-slate-700">대표이미지 <span className="text-[10px] font-normal text-slate-400 ml-0.5 hidden 2xl:inline">(600x600)</span></span>
+                {form.main_image_url && <span className="text-[10px] text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded">등록됨</span>}
+              </div>
+              <input 
+                type="file" 
+                accept="image/*"
+                onChange={e => handleFileUpload(e, 'main_image_url')}
+                className="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:font-semibold file:bg-pink-50 file:text-pink-700 group-hover:file:bg-pink-100 cursor-pointer" 
+              />
+            </label>
+            <label className="flex-1 border rounded-lg px-3 py-2 flex flex-col bg-white relative justify-center min-h-[58px] min-w-0 cursor-pointer hover:bg-slate-50 transition-colors group">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-sm font-semibold text-slate-700">상세이미지 <span className="text-[10px] font-normal text-slate-400 ml-0.5 hidden 2xl:inline">(가로 800px↑)</span></span>
+                {form.detail_image_url && <span className="text-[10px] text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded">등록됨</span>}
+              </div>
+              <input 
+                type="file" 
+                accept="image/*"
+                onChange={e => handleFileUpload(e, 'detail_image_url')}
+                className="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:font-semibold file:bg-blue-50 file:text-blue-700 group-hover:file:bg-blue-100 cursor-pointer" 
+              />
+            </label>
+            <div className="flex-[1.2] border rounded-lg px-3 py-2 flex flex-col bg-white justify-center min-h-[58px] min-w-0">
+              <span className="text-sm font-semibold text-slate-700 mb-1">수령 방식</span>
+              <div className="flex items-center flex-wrap gap-x-2 gap-y-1">
+                {['매장에서', '가져가기', '배달', '배송'].map(method => (
+                  <label key={method} className="flex items-center space-x-1 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      checked={form.available_methods.includes(method)}
+                      onChange={(e) => {
+                        const newMethods = e.target.checked 
+                          ? [...form.available_methods, method] 
+                          : form.available_methods.filter(m => m !== method);
+                        setForm({...form, available_methods: newMethods});
+                      }}
+                      className="rounded text-pink-500 focus:ring-pink-500 w-3 h-3"
+                    />
+                    <span className="text-xs text-slate-600 whitespace-nowrap">{method}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
           </div>
 
-          <button type="submit" className="w-full bg-slate-800 text-white font-bold py-3 rounded-lg hover:bg-slate-700 transition flex items-center justify-center">
-            <Plus className="w-4 h-4 mr-1"/> 등록
+          <button type="submit" disabled={isUploading} className={`w-full text-white font-bold py-3 rounded-lg transition flex items-center justify-center ${isUploading ? 'bg-slate-400 cursor-not-allowed' : editTargetId ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-800 hover:bg-slate-700'}`}>
+            {isUploading ? '이미지 업로드 중...' : editTargetId ? <><Pencil className="w-4 h-4 mr-1"/> 수정 완료</> : <><Plus className="w-4 h-4 mr-1"/> 등록</>}
           </button>
         </form>
+      </div>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-100 text-sm">
-              <th className="p-4 font-semibold text-slate-600">대표 이미지</th>
+              <th className="p-4 font-semibold text-slate-600">ID</th>
               <th className="p-4 font-semibold text-slate-600">분류</th>
+              <th className="p-4 font-semibold text-slate-600">카테고리</th>
               <th className="p-4 font-semibold text-slate-600 w-[20%]">상품정보</th>
               <th className="p-4 font-semibold text-slate-600 text-right">가격</th>
-              <th className="p-4 font-semibold text-slate-600">상세 설명 문구</th>
-              <th className="p-4 font-semibold text-slate-600">상세설명 이미지</th>
-              <th className="p-4 font-semibold text-slate-600">쇼핑몰 링크</th>
+              <th className="p-4 font-semibold text-slate-600">상세 설명</th>
               <th className="p-4 font-semibold text-slate-600 text-center w-24">관리</th>
             </tr>
           </thead>
@@ -167,39 +256,49 @@ export default function ProductsPage() {
             ) : (
               data.map(t => (
                 <tr key={t.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="p-4 text-xs font-mono text-slate-400">{(t.id as string).slice(-6)}</td>
                   <td className="p-4">
-                    {t.main_image_url ? (
-                      <img src={t.main_image_url} alt={t.name} className="w-16 h-16 object-cover rounded-lg border border-slate-200" />
-                    ) : (
-                      <div className="w-16 h-16 bg-slate-100 rounded-lg flex items-center justify-center text-xs text-slate-400">No Img</div>
-                    )}
+                    <span className="px-3 py-1 text-xs font-semibold text-blue-600 bg-blue-50 rounded-lg">{t.category || '스토어용'}</span>
                   </td>
-                  <td className="p-4 text-sm font-semibold text-blue-600 bg-blue-50/50 rounded-lg text-center">{t.category || '일반상품'}</td>
-                  <td className="p-4 font-medium text-slate-800">{t.name}</td>
+                  <td className="p-4 text-sm text-slate-600 font-medium">{t.menu_category || '-'}</td>
+                  <td className="p-4">
+                    <div className="flex items-center space-x-3">
+                      {t.main_image_url ? (
+                        <img 
+                          src={t.main_image_url} 
+                          alt={t.name} 
+                          className="w-10 h-10 object-cover rounded shadow-sm cursor-pointer" 
+                          onMouseEnter={(e) => setHoverImage({url: t.main_image_url, x: e.clientX, y: e.clientY})}
+                          onMouseMove={(e) => setHoverImage({url: t.main_image_url, x: e.clientX, y: e.clientY})}
+                          onMouseLeave={() => setHoverImage(null)}
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-slate-100 rounded flex items-center justify-center text-[10px] text-slate-400">No Img</div>
+                      )}
+                      <div>
+                        <div className="font-bold text-slate-800">{t.name}</div>
+                        <div className="text-xs text-slate-500 mt-0.5 flex gap-1">
+                          {t.available_methods ? t.available_methods.split(',').map((method: string, i: number) => (
+                            <span key={i} className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px]">{method}</span>
+                          )) : null}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
                   <td className="p-4 text-pink-600 font-semibold whitespace-nowrap text-right">{t.price ? Number(String(t.price).replace(/[^0-9]/g, '')).toLocaleString() : '-'}</td>
                   <td className="p-4 text-slate-500 text-xs">
-                    <p className="truncate max-w-[150px]" title={t.description}>{t.description || '-'}</p>
-                  </td>
-                  <td className="p-4 text-slate-500 text-xs">
-                    {t.detail_image_url ? (
-                      <a href={t.detail_image_url} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline flex items-center">
-                        <ExternalLink className="w-3 h-3 mr-1 shrink-0" /> 보기
-                      </a>
-                    ) : '-'}
-                  </td>
-                  <td className="p-4 text-slate-500 text-sm max-w-[150px] truncate">
-                    {t.url ? (
-                      <a href={t.url} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline flex items-center">
-                        {t.url} <ExternalLink className="w-3 h-3 ml-1 shrink-0" />
-                      </a>
-                    ) : (
-                      '-'
-                    )}
+                    <p className="truncate max-w-[200px]" title={t.description}>{t.description || '-'}</p>
+                    {t.url && <a href={t.url} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline mt-1 block">링크</a>}
                   </td>
                   <td className="p-4 text-center">
-                    <button onClick={() => deleteData(t.id)} className="text-slate-300 hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-red-50">
-                      <Trash2 className="w-4 h-4"/>
-                    </button>
+                    <div className="flex items-center justify-center space-x-1">
+                      <button onClick={() => handleEditClick(t)} className="text-slate-400 hover:text-pink-600 transition-colors p-2 rounded-lg hover:bg-pink-50" title="수정">
+                        <Pencil className="w-4 h-4"/>
+                      </button>
+                      <button onClick={() => deleteData(t.id)} className="text-slate-400 hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-red-50" title="삭제">
+                        <Trash2 className="w-4 h-4"/>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -207,6 +306,21 @@ export default function ProductsPage() {
           </tbody>
         </table>
       </div>
+      
+      {/* Image Hover Preview Portal */}
+      {hoverImage && (
+        <div 
+          className="fixed z-[100] pointer-events-none bg-white p-2 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-slate-200"
+          style={{ 
+            left: hoverImage.x + 20, 
+            top: Math.max(20, hoverImage.y - 125), // Center vertically relative to cursor, keep in view
+            width: '250px',
+            height: '250px'
+          }}
+        >
+          <img src={hoverImage.url} alt="Preview" className="w-full h-full object-contain rounded-xl" />
+        </div>
+      )}
     </div>
   );
 }

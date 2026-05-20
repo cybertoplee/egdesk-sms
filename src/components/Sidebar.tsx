@@ -22,14 +22,14 @@ export default async function Sidebar() {
 
 
   return (
-    <div className="w-64 bg-slate-900 text-white min-h-screen flex flex-col shadow-2xl">
+    <div className="w-64 bg-slate-900 text-white h-full min-h-0 flex flex-col shadow-2xl">
       <div className="p-6 border-b border-slate-800">
         <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400">
           EGDESK SMS
         </h1>
         <p className="text-sm text-slate-400 mt-1">고객 관리 무료 문자 발송 시스템</p>
       </div>
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="p-4 space-y-2 flex-1 overflow-y-auto">
         <Link href="/" className="flex items-center space-x-3 p-3 rounded-lg hover:bg-slate-800 transition-all text-slate-300 hover:text-white">
           <Home className="w-5 h-5 text-blue-400" />
           <span>대시보드</span>

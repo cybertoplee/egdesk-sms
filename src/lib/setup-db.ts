@@ -74,6 +74,8 @@ export async function setupDatabase() {
       { name: 'main_image_url', type: 'TEXT' },
       { name: 'detail_image_url', type: 'TEXT' },
       { name: 'available_methods', type: 'TEXT' },
+      { name: 'category', type: 'TEXT' },
+      { name: 'menu_category', type: 'TEXT' },
     ], { tableName: 'products', uniqueKeyColumns: ['id'], duplicateAction: 'update' });
     console.log('Table "products" created.');
   } catch (e: any) {
@@ -104,6 +106,12 @@ export async function setupDatabase() {
       { name: 'customer_phone', type: 'TEXT', notNull: true },
       { name: 'product_name', type: 'TEXT', notNull: true },
       { name: 'quantity', type: 'TEXT' },
+      { name: 'total_price', type: 'TEXT' },
+      { name: 'delivery_method', type: 'TEXT' },
+      { name: 'shipping_address', type: 'TEXT' },
+      { name: 'tracking_number', type: 'TEXT' },
+      { name: 'attachment_url', type: 'TEXT' },
+      { name: 'customer_memo', type: 'TEXT' },
       { name: 'order_date', type: 'TEXT' },
       { name: 'status', type: 'TEXT' },
     ], { tableName: 'crm_orders', uniqueKeyColumns: ['id'], duplicateAction: 'update' });

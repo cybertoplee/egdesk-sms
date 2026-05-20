@@ -5,9 +5,9 @@ import { usePathname } from "next/navigation";
 export default function MainContentWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   
-  if (pathname === '/login' || pathname.startsWith('/store')) {
+  if (pathname === '/login' || pathname.startsWith('/store') || pathname.startsWith('/table-order') || pathname.startsWith('/booking')) {
     return <>{children}</>;
   }
 
-  return <div className="p-8 h-full w-full">{children}</div>;
+  return <div className="p-8 min-h-full w-full">{children}</div>;
 }

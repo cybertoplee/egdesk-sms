@@ -19,7 +19,6 @@ export default function TableOrderMenuPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [couponError, setCouponError] = useState('');
 
-  const categories = ["전체", "식사류", "안주류", "주류", "음료", "일반상품"];
 
   useEffect(() => {
     fetchProducts();
@@ -29,7 +28,12 @@ export default function TableOrderMenuPage() {
     try {
       const res = await fetch('/api/products');
       const json = await res.json();
-      if (json.success) setProducts(json.products);
+      if (json.success) {
+        const tableOrderProducts = json.products.filter((p: any) => 
+          p.category === '테이블용'
+        );
+        setProducts(tableOrderProducts);
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -54,9 +58,11 @@ export default function TableOrderMenuPage() {
     });
   };
 
+  const categories = ['전체', ...Array.from(new Set(products.map(p => p.menu_category).filter(Boolean)))];
+
   const filteredProducts = activeCategory === "전체" 
     ? products 
-    : products.filter(p => (p.category || '일반상품') === activeCategory);
+    : products.filter(p => p.menu_category === activeCategory);
 
   const cartItemsCount = Object.values(cart).reduce((a, b) => a + b, 0);
   const cartTotalAmount = Object.entries(cart).reduce((total, [id, qty]) => {
@@ -190,17 +196,16 @@ export default function TableOrderMenuPage() {
           <h1 className="text-xl font-black text-slate-800">테이블 {tableId}번</h1>
           <div className="w-10"></div>
         </div>
-        
-        {/* Categories */}
-        <div className="flex overflow-x-auto hide-scrollbar px-4 pb-4 gap-2 border-b border-slate-100">
-          {categories.map(cat => (
+        {/* Dynamic Categories */}
+        <div className="flex overflow-x-auto px-4 py-2 space-x-2 scrollbar-hide">
+          {categories.map((cat: any) => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`px-5 py-2.5 rounded-full font-bold text-sm whitespace-nowrap transition-all ${
+              className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
                 activeCategory === cat 
-                  ? 'bg-orange-600 text-white shadow-md shadow-orange-600/20' 
-                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                  ? 'bg-orange-500 text-white' 
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
               {cat}
