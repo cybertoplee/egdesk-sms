@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Home, Users, MessageSquare, Settings, ShoppingCart, ClipboardList, CreditCard, CalendarDays, Truck, Send, PackageSearch, UserCog, LogOut, Zap, Ticket } from 'lucide-react';
+import { Home, Users, MessageSquare, Settings, ShoppingCart, ClipboardList, CreditCard, CalendarDays, Truck, Send, PackageSearch, Package, UserCog, LogOut, Zap, Ticket, Landmark } from 'lucide-react';
 import { cookies } from 'next/headers';
 import { decodeJwt } from 'jose';
 
@@ -119,6 +119,10 @@ export default async function Sidebar() {
           <CreditCard className="w-5 h-5 text-emerald-400" />
           <span>결제내역 관리</span>
         </Link>
+        <Link href="/finance" className="flex items-center space-x-3 p-3 rounded-lg hover:bg-slate-800 transition-all text-slate-300 hover:text-white">
+          <Landmark className="w-5 h-5 text-sky-400" />
+          <span>금융 정보 센터</span>
+        </Link>
         <Link href="/coupons" className="flex items-center space-x-3 p-3 rounded-lg hover:bg-slate-800 transition-all text-slate-300 hover:text-white">
           <Ticket className="w-5 h-5 text-rose-400" />
           <span>쿠폰 관리</span>
@@ -134,6 +138,10 @@ export default async function Sidebar() {
         <Link href="/products" className="flex items-center space-x-3 p-3 rounded-lg hover:bg-slate-800 transition-all text-slate-300 hover:text-white">
           <PackageSearch className="w-5 h-5 text-pink-400" />
           <span>상품 DB 관리</span>
+        </Link>
+        <Link href="/inventory" className="flex items-center space-x-3 p-3 rounded-lg hover:bg-slate-800 transition-all text-slate-300 hover:text-white">
+          <Package className="w-5 h-5 text-cyan-400" />
+          <span>재고 관리 Hub</span>
         </Link>
         <Link href="/instagram" className="flex items-center space-x-3 p-3 rounded-lg hover:bg-slate-800 transition-all text-slate-300 hover:text-white">
           <InstagramIcon className="w-5 h-5 text-[#ff007f]" />
