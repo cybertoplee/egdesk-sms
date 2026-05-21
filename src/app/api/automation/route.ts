@@ -1,38 +1,17 @@
 import { NextResponse } from 'next/server';
-import { queryTable } from '../../../../egdesk-helpers';
+import { queryTable, deleteRows, insertRows } from '../../../../egdesk-helpers';
 
-// Helper to interact with MCP for saving settings
+// Helper to interact with MCP for saving settings using egdesk-helpers.ts
 async function saveSetting(key: string, value: string) {
-  const url = 'http://localhost:8080/user-data/tools/call';
-  const apiKey = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_EGDESK_API_KEY) || '';
-  const headers: any = { 'Content-Type': 'application/json' };
-  if (apiKey) headers['X-Api-Key'] = apiKey;
+  // 기존 설정 데이터 키 삭제
+  await deleteRows('system_settings', { filters: { key } });
 
-  // We delete the old key first to simulate an upsert, then insert the new one
-  await fetch(url, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      tool: 'user_data_sql_query',
-      arguments: {
-        query: `DELETE FROM system_settings WHERE key = '${key}'`
-      }
-    })
-  });
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      tool: 'user_data_insert_rows',
-      arguments: {
-        tableName: 'system_settings',
-        rows: [{ key, value, created_at: new Date().toISOString() }]
-      }
-    })
-  });
-
-  if (!response.ok) throw new Error('MCP Tool Error saving setting');
+  // 새로운 데이터 안전하게 삽입
+  await insertRows('system_settings', [{ 
+    key, 
+    value, 
+    created_at: new Date().toISOString() 
+  }]);
 }
 
 export async function GET() {

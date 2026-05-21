@@ -13,7 +13,7 @@ export default async function Home() {
   let recentLogs: any[] = [];
 
   try {
-    const customersRes = await queryTable('crm_customers', { limit: 5, sortBy: 'created_at', sortDesc: true });
+    const customersRes = await queryTable('crm_customers', { limit: 5, orderBy: 'created_at', orderDirection: 'DESC' });
     totalCustomers = customersRes.totalCount || customersRes.rows?.length || 0;
     recentCustomers = customersRes.rows || [];
   } catch (e) {
@@ -21,7 +21,7 @@ export default async function Home() {
   }
 
   try {
-    const logsRes = await queryTable('message_logs', { limit: 5, sortBy: 'created_at', sortDesc: true });
+    const logsRes = await queryTable('message_logs', { limit: 5, orderBy: 'created_at', orderDirection: 'DESC' });
     totalLogs = logsRes.totalCount || logsRes.rows?.length || 0;
     recentLogs = logsRes.rows || [];
   } catch (e) {

@@ -1,8 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
-import { ClipboardList, Plus, Trash2, Search, Truck, MapPin, DollarSign, Store, Send, Image as ImageIcon, X } from "lucide-react";
+import { ClipboardList, Plus, Trash2, Search, Truck, MapPin, DollarSign, Store, Send, Image as ImageIcon, X, Package } from "lucide-react";
+import OrderDetailModal from "@/components/OrderDetailModal";
 
 export default function OrdersPage() {
+  const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
   const [data, setData] = useState<any[]>([]);
   const [form, setForm] = useState({ 
     customerName: '', 
@@ -24,7 +26,7 @@ export default function OrdersPage() {
 
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
 
-  const TABS = ['전체', '견적요청', '결제대기', '결제완료', '상품준비중', '배송시작', '배송중', '배송완료', '수령완료', '주문취소'];
+  const TABS = ['전체', '접수완료', '견적요청', '결제대기', '결제완료', '상품준비중', '배송시작', '배송중', '배송완료', '수령완료', '주문취소'];
   
   useEffect(() => { fetchData(); }, []);
   
@@ -193,6 +195,7 @@ export default function OrdersPage() {
                   <input type="checkbox" onChange={toggleSelectAll} checked={filteredData.length > 0 && selectedIds.size === filteredData.length} className="rounded" />
                 </th>
                 <th className="p-4">주문일자</th>
+                <th className="p-4">주문번호</th>
                 <th className="p-4">주문정보</th>
                 <th className="p-4">수령방식/배송정보</th>
                 <th className="p-4 text-right">수량</th>
@@ -208,6 +211,14 @@ export default function OrdersPage() {
                     <input type="checkbox" checked={selectedIds.has(t.id)} onChange={() => toggleSelect(t.id)} className="rounded" />
                   </td>
                   <td className="p-4 text-sm text-slate-500">{t.order_date}</td>
+                  <td className="p-4">
+                    <button 
+                      onClick={() => setActiveOrderId(t.id)}
+                      className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-lg text-xs font-mono font-bold tracking-tight transition-all active:scale-95"
+                    >
+                      ORD-{t.id.slice(-6).toUpperCase()}
+                    </button>
+                  </td>
                   <td className="p-4">
                     <div className="font-bold text-slate-800 flex items-center">
                       {t.product_name}
@@ -235,6 +246,7 @@ export default function OrdersPage() {
                       {t.delivery_method === '자체배달' && <Send className="w-4 h-4 mr-1 text-orange-500"/>}
                       {t.delivery_method === '방문픽업' && <Package className="w-4 h-4 mr-1 text-green-500"/>}
                       {t.delivery_method === '현장판매' && <DollarSign className="w-4 h-4 mr-1 text-purple-500"/>}
+                      {t.delivery_method === '상담/캡처' && <ImageIcon className="w-4 h-4 mr-1 text-teal-500"/>}
                       
                       {t.delivery_method || '배송'}
                     </div>
@@ -306,6 +318,12 @@ export default function OrdersPage() {
             </div>
           </div>
         </div>
+      )}
+      {activeOrderId && (
+        <OrderDetailModal 
+          orderId={activeOrderId} 
+          onClose={() => setActiveOrderId(null)} 
+        />
       )}
     </div>
   );

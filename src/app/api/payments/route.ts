@@ -24,7 +24,8 @@ export async function POST(req: Request) {
       payment_method: data.paymentMethod || '카드결제',
       amount: data.amount,
       payment_date: data.paymentDate || new Date().toISOString().split('T')[0],
-      status: data.status || '결제완료'
+      status: data.status || '결제완료',
+      order_id: data.orderId || ''
     }]);
     
     // Trigger automation in the background

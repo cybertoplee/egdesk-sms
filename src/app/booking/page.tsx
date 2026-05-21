@@ -76,6 +76,11 @@ export default function BookingPage() {
     if (appliedCoupon) {
       finalServiceName += ` [쿠폰사용: ${appliedCoupon.code} (-${appliedCoupon.discountAmount.toLocaleString()}원)]`;
     }
+
+    // 최종 결제 예정 금액 계산
+    const unitPrice = getNumericPrice(selectedService.price || '0');
+    const discount = appliedCoupon ? appliedCoupon.discountAmount : 0;
+    const finalAmount = Math.max(0, unitPrice - discount);
     
     try {
       const res = await fetch('/api/reservations', {
@@ -87,7 +92,8 @@ export default function BookingPage() {
           serviceName: finalServiceName,
           reservationDate: form.reservationDate,
           reservationTime: form.reservationTime,
-          status: '예약접수'
+          status: '예약접수',
+          amount: finalAmount
         })
       });
       const json = await res.json();

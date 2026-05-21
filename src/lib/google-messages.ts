@@ -43,7 +43,7 @@ export class GoogleMessagesAutomation {
     }
 
     const launchOptions = { 
-      headless: headless !== undefined ? headless : this.currentHeadless,
+      headless: headless !== undefined ? headless : (this.currentHeadless ?? true),
       args: [
         '--disable-blink-features=AutomationControlled',
         '--disable-dev-shm-usage', // 공유 메모리 부족 방지 (중요)

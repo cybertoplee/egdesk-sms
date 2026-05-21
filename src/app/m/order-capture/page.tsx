@@ -144,9 +144,6 @@ export default function MobileOrderCapture() {
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-24">
       {/* Mobile Header */}
       <div className="bg-white px-4 py-4 border-b border-slate-200 sticky top-0 z-50 flex items-center shadow-sm">
-        <button onClick={() => router.push('/')} className="mr-3 p-1 rounded-full hover:bg-slate-100">
-          <ArrowLeft className="w-6 h-6 text-slate-600" />
-        </button>
         <h1 className="text-xl font-bold text-slate-800 tracking-tight">간편 캡처 접수</h1>
       </div>
 

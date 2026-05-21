@@ -1,8 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
 import { CalendarDays, Plus, Trash2 } from "lucide-react";
+import OrderDetailModal from "@/components/OrderDetailModal";
 
 export default function ReservationsPage() {
+  const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
   const [data, setData] = useState<any[]>([]);
   const [form, setForm] = useState({ customerName: '', customerPhone: '', serviceName: '', reservationDate: '', reservationTime: '' });
 
@@ -39,18 +41,59 @@ export default function ReservationsPage() {
         </form>
       </div>
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <table className="w-full text-left border-collapse">
-          <thead><tr className="bg-slate-50 border-b border-slate-100 text-sm"><th className="p-4">예약일자</th><th className="p-4">예약시간</th><th className="p-4">고객명</th><th className="p-4">연락처</th><th className="p-4">예약내용</th><th className="p-4">상태</th><th className="p-4">관리</th></tr></thead>
+        <table className="w-full text-left border-collapse whitespace-nowrap">
+          <thead>
+            <tr className="bg-slate-50 border-b border-slate-100 text-sm text-slate-600">
+              <th className="p-4">예약일자</th>
+              <th className="p-4">예약시간</th>
+              <th className="p-4">예약번호</th>
+              <th className="p-4">고객명</th>
+              <th className="p-4">연락처</th>
+              <th className="p-4">예약내용</th>
+              <th className="p-4">상태</th>
+              <th className="p-4">관리</th>
+            </tr>
+          </thead>
           <tbody>
             {data.map(t => (
-              <tr key={t.id} className="border-b border-slate-50 hover:bg-slate-50">
-                <td className="p-4 font-medium text-indigo-600">{t.reservation_date}</td><td className="p-4">{t.reservation_time}</td><td className="p-4">{t.customer_name}</td><td className="p-4">{t.customer_phone}</td><td className="p-4">{t.service_name}</td><td className="p-4">{t.status}</td>
-                <td className="p-4"><button onClick={()=>deleteData(t.id)} className="text-red-400 hover:text-red-600"><Trash2 className="w-4 h-4"/></button></td>
+              <tr key={t.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                <td className="p-4 font-medium text-indigo-600">{t.reservation_date}</td>
+                <td className="p-4">{t.reservation_time}</td>
+                <td className="p-4">
+                  <button 
+                    onClick={() => setActiveOrderId(t.id)}
+                    className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-lg text-xs font-mono font-bold tracking-tight transition-all active:scale-95"
+                  >
+                    RES-{t.id.slice(-6).toUpperCase()}
+                  </button>
+                </td>
+                <td className="p-4">{t.customer_name}</td>
+                <td className="p-4">{t.customer_phone}</td>
+                <td className="p-4">{t.service_name}</td>
+                <td className="p-4">{t.status}</td>
+                <td className="p-4">
+                  <button onClick={()=>deleteData(t.id)} className="text-red-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors" title="삭제">
+                    <Trash2 className="w-4 h-4"/>
+                  </button>
+                </td>
               </tr>
             ))}
+            {data.length === 0 && (
+              <tr>
+                <td colSpan={8} className="p-12 text-center text-slate-400">
+                  등록된 예약 내역이 없습니다.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
+      {activeOrderId && (
+        <OrderDetailModal 
+          orderId={activeOrderId} 
+          onClose={() => setActiveOrderId(null)} 
+        />
+      )}
     </div>
   );
 }

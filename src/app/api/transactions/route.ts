@@ -22,7 +22,8 @@ export async function GET(req: Request) {
         productName: result.rows[0].product_name,
         amount: result.rows[0].amount,
         orderDate: result.rows[0].order_date,
-        status: result.rows[0].status
+        status: result.rows[0].status,
+        orderId: result.rows[0].order_id
       } : null;
       return NextResponse.json({ success: true, transaction });
     }
@@ -40,7 +41,8 @@ export async function GET(req: Request) {
       productName: r.product_name,
       amount: r.amount,
       orderDate: r.order_date,
-      status: r.status
+      status: r.status,
+      orderId: r.order_id
     }));
 
     return NextResponse.json({ success: true, transactions });

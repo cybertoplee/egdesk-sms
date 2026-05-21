@@ -23,6 +23,34 @@ function InstagramIcon({ className = "w-5 h-5" }: { className?: string }) {
   );
 }
 
+// 커스텀 네이버 아이콘 SVG
+function NaverIcon({ className = "w-5 h-5" }: { className?: string }) {
+  return (
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      viewBox="0 0 24 24" 
+      fill="currentColor" 
+      className={className}
+    >
+      <path d="M16.2 3H21v18h-4.8l-7.4-11V21H4V3h4.8l7.4 11V3z"/>
+    </svg>
+  );
+}
+
+// 커스텀 유튜브 아이콘 SVG
+function YoutubeIcon({ className = "w-5 h-5" }: { className?: string }) {
+  return (
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      viewBox="0 0 24 24" 
+      fill="currentColor" 
+      className={className}
+    >
+      <path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.108C19.517 3.545 12 3.545 12 3.545s-7.516 0-9.387.51a3.003 3.003 0 0 0-2.11 2.108C0 8.033 0 12 0 12s0 3.967.502 5.837a3.003 3.003 0 0 0 2.11 2.108c1.871.51 9.387.51 9.387.51s7.517 0 9.387-.51a3.003 3.003 0 0 0 2.11-2.108C24 15.967 24 12 24 12s0-3.967-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+    </svg>
+  );
+}
+
 export default async function Sidebar() {
   const cookieStore = await cookies();
   const token = cookieStore.get('auth_token')?.value;
@@ -43,20 +71,29 @@ export default async function Sidebar() {
 
   return (
     <div className="w-64 bg-slate-900 text-white h-full min-h-0 flex flex-col shadow-2xl">
+      <style dangerouslySetInnerHTML={{__html: `
+        .no-scrollbar::-webkit-scrollbar {
+          display: none !important;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none !important;
+          scrollbar-width: none !important;
+        }
+      `}} />
       <div className="p-6 border-b border-slate-800">
         <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400">
           EGDESK SMS
         </h1>
-        <p className="text-sm text-slate-400 mt-1">고객 관리 무료 문자 발송 시스템</p>
+        <p className="text-sm text-slate-400 mt-1">평생 무료 문자 발송 시스템</p>
       </div>
-      <nav className="p-4 space-y-2 flex-1 overflow-y-auto">
+      <nav className="p-4 space-y-2 flex-1 overflow-y-auto no-scrollbar">
         <Link href="/" className="flex items-center space-x-3 p-3 rounded-lg hover:bg-slate-800 transition-all text-slate-300 hover:text-white">
           <Home className="w-5 h-5 text-blue-400" />
           <span>대시보드</span>
         </Link>
         <Link href="/sms" className="flex items-center space-x-3 p-3 rounded-lg hover:bg-slate-800 transition-all text-slate-300 hover:text-white">
           <MessageSquare className="w-5 h-5 text-purple-400" />
-          <span>문자 발송</span>
+          <span>무료 문자 발송</span>
         </Link>
         <Link href="/message-logs" className="flex items-center space-x-3 p-3 rounded-lg hover:bg-slate-800 transition-all text-slate-300 hover:text-white">
           <Send className="w-5 h-5 text-purple-400" />
@@ -100,7 +137,15 @@ export default async function Sidebar() {
         </Link>
         <Link href="/instagram" className="flex items-center space-x-3 p-3 rounded-lg hover:bg-slate-800 transition-all text-slate-300 hover:text-white">
           <InstagramIcon className="w-5 h-5 text-[#ff007f]" />
-          <span>인스타 AI 마케팅</span>
+          <span>인스타그램 AI 마케팅</span>
+        </Link>
+        <Link href="/naver-blog" className="flex items-center space-x-3 p-3 rounded-lg hover:bg-slate-800 transition-all text-slate-300 hover:text-white">
+          <NaverIcon className="w-5 h-5 text-[#2db400]" />
+          <span>N-BLOG AI 포스팅</span>
+        </Link>
+        <Link href="/youtube-shorts" className="flex items-center space-x-3 p-3 rounded-lg hover:bg-slate-800 transition-all text-slate-300 hover:text-white">
+          <YoutubeIcon className="w-5 h-5 text-[#FF0000]" />
+          <span>YOUTUBE 쇼츠 AI</span>
         </Link>
       </nav>
       <div className="p-4 border-t border-slate-800 space-y-2">

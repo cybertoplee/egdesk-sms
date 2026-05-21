@@ -65,7 +65,8 @@ export async function GET() {
         payment_method: '카드결제',
         amount: '100000원',
         payment_date: dateStr,
-        status: '결제완료'
+        status: '결제완료',
+        order_id: (10000 + i).toString()
       });
 
       reservations.push({
@@ -85,7 +86,8 @@ export async function GET() {
         address: addresses[i],
         courier: '대한통운',
         tracking_number: '6123456789' + i,
-        status: '배송중'
+        status: '배송중',
+        order_id: (10000 + i).toString()
       });
 
       logs.push({

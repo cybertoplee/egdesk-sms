@@ -58,3 +58,19 @@ body {
   animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
+/* 스크롤바를 숨기기 위한 유틸리티 클래스 */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* 유튜브 쇼츠 AI 상단 배너 강제 그라디언트 배경 설정 */
+.shorts-banner-gradient {
+  background: linear-gradient(135deg, #dc2626 0%, #f43f5e 50%, #f97316 100%) !important;
+}
+
+
+

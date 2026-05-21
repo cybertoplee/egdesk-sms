@@ -11,7 +11,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "EGDESK SMS",
-  description: "고객 관리 무료 문자 발송 시스템",
+  description: "평생 무료 문자 발송 시스템",
 };
 
 export default function RootLayout({

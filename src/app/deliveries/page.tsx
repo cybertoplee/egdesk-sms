@@ -1,10 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Truck, Plus, Trash2 } from "lucide-react";
+import OrderDetailModal from "@/components/OrderDetailModal";
 
 export default function DeliveriesPage() {
   const [data, setData] = useState<any[]>([]);
   const [form, setForm] = useState({ customerName: '', customerPhone: '', address: '', courier: '대한통운', trackingNumber: '' });
+  const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
 
   useEffect(() => { fetchData(); }, []);
   const fetchData = async () => {
@@ -46,17 +48,70 @@ export default function DeliveriesPage() {
       </div>
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <table className="w-full text-left border-collapse">
-          <thead><tr className="bg-slate-50 border-b border-slate-100 text-sm"><th className="p-4">고객명</th><th className="p-4">연락처</th><th className="p-4">주소</th><th className="p-4">택배사</th><th className="p-4">운송장번호</th><th className="p-4">상태</th><th className="p-4">관리</th></tr></thead>
+          <thead>
+            <tr className="bg-slate-50 border-b border-slate-100 text-sm">
+              <th className="p-4">고객명</th>
+              <th className="p-4">연관 주문</th>
+              <th className="p-4">연락처</th>
+              <th className="p-4">주소</th>
+              <th className="p-4">택배사</th>
+              <th className="p-4">운송장번호</th>
+              <th className="p-4">상태</th>
+              <th className="p-4">관리</th>
+            </tr>
+          </thead>
           <tbody>
             {data.map(t => (
               <tr key={t.id} className="border-b border-slate-50 hover:bg-slate-50">
-                <td className="p-4">{t.customer_name}</td><td className="p-4">{t.customer_phone}</td><td className="p-4 text-xs">{t.address}</td><td className="p-4">{t.courier}</td><td className="p-4 font-mono text-amber-600">{t.tracking_number}</td><td className="p-4">{t.status}</td>
-                <td className="p-4"><button onClick={()=>deleteData(t.id)} className="text-red-400 hover:text-red-600"><Trash2 className="w-4 h-4"/></button></td>
+                <td className="p-4 font-medium text-slate-800">{t.customer_name}</td>
+                <td className="p-4">
+                  {t.order_id ? (
+                    <button 
+                      onClick={() => setActiveOrderId(t.order_id || null)}
+                      className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-lg text-xs font-mono font-bold tracking-tight transition-all active:scale-95"
+                    >
+                      ORD-{t.order_id.slice(-6).toUpperCase()}
+                    </button>
+                  ) : (
+                    <span className="text-xs text-slate-400 font-light">-</span>
+                  )}
+                </td>
+                <td className="p-4">{t.customer_phone}</td>
+                <td className="p-4 text-xs text-slate-600">{t.address}</td>
+                <td className="p-4">{t.courier}</td>
+                <td className="p-4 font-mono text-amber-600">{t.tracking_number || '-'}</td>
+                <td className="p-4">
+                  <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                    t.status === '배송완료' 
+                      ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                      : 'bg-amber-50 text-amber-600 border border-amber-100'
+                  }`}>
+                    {t.status}
+                  </span>
+                </td>
+                <td className="p-4">
+                  <button onClick={()=>deleteData(t.id)} className="text-red-400 hover:text-red-600">
+                    <Trash2 className="w-4 h-4"/>
+                  </button>
+                </td>
               </tr>
             ))}
+            {data.length === 0 && (
+              <tr>
+                <td colSpan={8} className="p-8 text-center text-slate-400">
+                  배송 내역이 존재하지 않습니다.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
+      {activeOrderId && (
+        <OrderDetailModal 
+          orderId={activeOrderId} 
+          onClose={() => setActiveOrderId(null)} 
+        />
+      )}
     </div>
   );
 }

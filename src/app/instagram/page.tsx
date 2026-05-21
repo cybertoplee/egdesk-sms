@@ -1527,10 +1527,10 @@ export default function InstagramMarketingPortal() {
       <AnimatePresence>
         {toastMessage && (
           <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className={`fixed bottom-8 right-8 z-50 px-5 py-3.5 rounded-2xl border shadow-lg flex items-center gap-3 backdrop-blur-xl ${
+            initial={{ opacity: 0, top: -80 }}
+            animate={{ opacity: 1, top: 32 }}
+            exit={{ opacity: 0, top: -80 }}
+            className={`fixed right-8 z-50 px-5 py-3.5 rounded-2xl border shadow-lg flex items-center gap-3 backdrop-blur-xl ${
               toastType === 'success' 
                 ? 'bg-emerald-50 border-emerald-200 text-emerald-800 shadow-emerald-100/50' 
                 : toastType === 'error'

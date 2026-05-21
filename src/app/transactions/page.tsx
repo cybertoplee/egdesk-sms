@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { ShoppingCart, Send, Plus, Trash2 } from "lucide-react";
+import OrderDetailModal from "@/components/OrderDetailModal";
 
 interface Transaction {
   id: string;
@@ -11,11 +12,13 @@ interface Transaction {
   amount: string;
   orderDate: string;
   status: string;
+  orderId?: string;
 }
 
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
   
   // New Transaction States
   const [newName, setNewName] = useState("");
@@ -183,6 +186,7 @@ export default function TransactionsPage() {
                 <input type="checkbox" onChange={toggleSelectAll} checked={transactions.length > 0 && selectedIds.size === transactions.length} className="rounded" />
               </th>
               <th className="p-4">주문일자</th>
+              <th className="p-4">연관 주문</th>
               <th className="p-4">고객명</th>
               <th className="p-4">연락처</th>
               <th className="p-4">주문상품</th>
@@ -197,6 +201,18 @@ export default function TransactionsPage() {
                   <input type="checkbox" checked={selectedIds.has(t.id)} onChange={() => toggleSelect(t.id)} className="rounded" />
                 </td>
                 <td className="p-4 text-sm">{t.orderDate}</td>
+                <td className="p-4">
+                  {t.orderId ? (
+                    <button 
+                      onClick={() => setActiveOrderId(t.orderId || null)}
+                      className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-lg text-xs font-mono font-bold tracking-tight transition-all active:scale-95"
+                    >
+                      ORD-{t.orderId.slice(-6).toUpperCase()}
+                    </button>
+                  ) : (
+                    <span className="text-xs text-slate-400 font-light">-</span>
+                  )}
+                </td>
                 <td className="p-4 font-medium text-slate-800">{t.customerName}</td>
                 <td className="p-4 text-slate-600">{t.customerPhone}</td>
                 <td className="p-4 text-slate-800">{t.productName}</td>
@@ -210,7 +226,7 @@ export default function TransactionsPage() {
             ))}
             {transactions.length === 0 && (
               <tr>
-                <td colSpan={7} className="p-8 text-center text-slate-400">
+                <td colSpan={8} className="p-8 text-center text-slate-400">
                   등록된 거래 내역이 없습니다.
                 </td>
               </tr>
@@ -218,6 +234,12 @@ export default function TransactionsPage() {
           </tbody>
         </table>
       </div>
+      {activeOrderId && (
+        <OrderDetailModal 
+          orderId={activeOrderId} 
+          onClose={() => setActiveOrderId(null)} 
+        />
+      )}
     </div>
   );
 }

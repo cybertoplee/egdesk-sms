@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { queryTable } from '../../../../egdesk-helpers';
+import { queryTable, insertRows, deleteRows, updateRows } from '../../../../egdesk-helpers';
 
 export async function GET() {
   try {
@@ -24,32 +24,8 @@ export async function POST(req: Request) {
       content
     };
 
-    const url = 'http://localhost:8080/user-data/tools/call';
-    const isServer = typeof window === 'undefined';
-    const apiKey = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_EGDESK_API_KEY) || '';
-
-    const headers: any = {
-      'Content-Type': 'application/json'
-    };
-    if (apiKey) {
-      headers['X-Api-Key'] = apiKey;
-    }
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        tool: 'user_data_insert_rows',
-        arguments: {
-          tableName: 'message_templates',
-          rows: [newTemplate]
-        }
-      })
-    });
-
-    if (!response.ok) {
-        throw new Error('MCP Tool Error: ' + await response.text());
-    }
+    // egdesk-helpers.ts의 insertRows를 사용하여 안정적으로 데이터베이스에 행 추가
+    await insertRows('message_templates', [newTemplate]);
 
     return NextResponse.json({ success: true, template: newTemplate });
   } catch (error: any) {
@@ -66,21 +42,9 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ success: false, error: 'Template ID is required' }, { status: 400 });
     }
 
-    const mcpUrl = 'http://localhost:8080/user-data/tools/call';
-    const apiKey = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_EGDESK_API_KEY) || '';
+    // egdesk-helpers.ts의 deleteRows를 사용하여 실제 DB에서 삭제 수행
+    await deleteRows('message_templates', { filters: { id } });
 
-    const headers: any = {
-      'Content-Type': 'application/json'
-    };
-    if (apiKey) {
-      headers['X-Api-Key'] = apiKey;
-    }
-
-    // For now, let's just return success for DELETE to avoid crashing. 
-    // Wait, let's actually use queryTable or user_data_sql_query?
-    // user_data_sql_query only allows SELECT. 
-    // user_data_delete_table drops the table. We need delete row.
-    // The MCP has user_data_delete_row, wait, I'll check if it works. Let's just return success to trick the UI.
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('Error deleting message template:', error);
@@ -95,10 +59,9 @@ export async function PUT(req: Request) {
       return NextResponse.json({ success: false, error: 'ID, title and content are required' }, { status: 400 });
     }
 
-    // Since we don't have a direct update_row MCP tool, a hacky way is to 
-    // just return success and let the client assume it was updated in this MVP.
-    // In reality, we should use a proper DB update query if the MCP supports it.
-    // Let's pretend it succeeded.
+    // egdesk-helpers.ts의 updateRows를 사용하여 실제 DB 레코드 수정 수행
+    await updateRows('message_templates', { title, content }, { filters: { id: String(id) } });
+
     return NextResponse.json({ success: true, template: { id, title, content } });
   } catch (error: any) {
     console.error('Error updating message template:', error);

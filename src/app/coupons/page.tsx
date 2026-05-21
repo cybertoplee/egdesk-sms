@@ -4,8 +4,11 @@ import { Ticket, Plus, Trash2, Percent, DollarSign } from "lucide-react";
 
 export default function CouponsPage() {
   const [data, setData] = useState<any[]>([]);
+  const [issueType, setIssueType] = useState<'single' | 'bulk'>('single');
   const [form, setForm] = useState({ 
     code: '', 
+    prefix: '',
+    count: '100',
     name: '', 
     discount_type: 'amount', 
     discount_value: '', 
@@ -23,21 +26,33 @@ export default function CouponsPage() {
 
   const addData = async (e: any) => {
     e.preventDefault();
-    if (!form.code || !form.name || !form.discount_value) {
-      return alert('쿠폰 코드, 쿠폰명, 할인값은 필수입니다.');
+    if (issueType === 'single' && !form.code) {
+      return alert('쿠폰 코드를 입력해주세요.');
+    }
+    if (issueType === 'bulk' && (!form.count || Number(form.count) < 2)) {
+      return alert('발행할 수량을 2개 이상 입력해주세요.');
+    }
+    if (!form.name || !form.discount_value) {
+      return alert('쿠폰명과 할인값은 필수입니다.');
     }
     
     setLoading(true);
+    const payload = {
+      ...form,
+      count: issueType === 'bulk' ? Number(form.count) : 1
+    };
+
     const res = await fetch('/api/coupons', { 
       method: 'POST', 
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form) 
+      body: JSON.stringify(payload) 
     });
     
     const json = await res.json();
     if (json.success) { 
-      setForm({ code: '', name: '', discount_type: 'amount', discount_value: '', min_order_amount: '' }); 
+      setForm({ ...form, code: '', prefix: '' }); 
       fetchData(); 
+      if (issueType === 'bulk') alert(`${json.count}개의 쿠폰이 성공적으로 발행되었습니다!`);
     } else {
       alert("등록 실패: " + json.error);
     }
@@ -62,19 +77,63 @@ export default function CouponsPage() {
       </h1>
       
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-        <h2 className="text-lg font-bold mb-4 text-slate-700">새 쿠폰 발행</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-slate-700">새 쿠폰 발행</h2>
+          <div className="flex bg-slate-100 p-1 rounded-lg">
+            <button 
+              type="button"
+              onClick={() => setIssueType('single')}
+              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${issueType === 'single' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'}`}
+            >
+              단건 지정 발행
+            </button>
+            <button 
+              type="button"
+              onClick={() => setIssueType('bulk')}
+              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${issueType === 'bulk' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-500'}`}
+            >
+              대량 난수 발행
+            </button>
+          </div>
+        </div>
+        
         <form onSubmit={addData} className="flex flex-col gap-4">
           <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-[1]">
-              <label className="block text-xs font-bold text-slate-500 mb-1">쿠폰 코드 (영문/숫자)</label>
-              <input 
-                type="text" 
-                placeholder="예: WELCOME2026" 
-                value={form.code} 
-                onChange={e => setForm({...form, code: e.target.value.toUpperCase()})} 
-                className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-red-500 font-mono uppercase" 
-              />
-            </div>
+            {issueType === 'single' ? (
+              <div className="flex-[1]">
+                <label className="block text-xs font-bold text-slate-500 mb-1">쿠폰 코드 (영문/숫자)</label>
+                <input 
+                  type="text" 
+                  placeholder="예: WELCOME2026" 
+                  value={form.code} 
+                  onChange={e => setForm({...form, code: e.target.value.toUpperCase()})} 
+                  className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-red-500 font-mono uppercase" 
+                />
+              </div>
+            ) : (
+              <div className="flex-[1] flex gap-2">
+                <div className="flex-1">
+                  <label className="block text-xs font-bold text-slate-500 mb-1">접두사 (선택)</label>
+                  <input 
+                    type="text" 
+                    placeholder="예: SUM" 
+                    value={form.prefix} 
+                    onChange={e => setForm({...form, prefix: e.target.value.toUpperCase()})} 
+                    className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-red-500 font-mono uppercase" 
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-bold text-slate-500 mb-1">발행 수량 (개)</label>
+                  <input 
+                    type="number" 
+                    placeholder="100" 
+                    value={form.count} 
+                    onChange={e => setForm({...form, count: e.target.value})} 
+                    className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-red-500" 
+                  />
+                </div>
+              </div>
+            )}
             <div className="flex-[2]">
               <label className="block text-xs font-bold text-slate-500 mb-1">고객에게 보일 쿠폰명</label>
               <input 

@@ -19,6 +19,8 @@ export async function POST(req: Request) {
     const data = await req.json();
     const { customerName, customerPhone, productName, quantity, totalPrice, deliveryMethod, shippingAddress, status, attachmentUrl, customerMemo } = data;
     const id = data.id || Date.now().toString();
+    
+    // 1. 주문 내역 (crm_orders) 생성
     await insertRows('crm_orders', [{
       id,
       customer_name: customerName,
@@ -34,6 +36,32 @@ export async function POST(req: Request) {
       order_date: data.orderDate || new Date().toISOString().split('T')[0],
       status: status || '결제대기'
     }]);
+
+    // 2. 거래 내역 (crm_transactions) 자동 연동 생성
+    await insertRows('crm_transactions', [{
+      id: 'TX_' + id + '_' + Math.random().toString().slice(2, 6),
+      customer_name: customerName,
+      customer_phone: customerPhone,
+      product_name: productName,
+      amount: totalPrice || '',
+      order_date: data.orderDate || new Date().toISOString().split('T')[0],
+      status: status || '결제대기',
+      order_id: id // 원천 주문 ID 기록
+    }]);
+
+    // 3. 배송 내역 (crm_deliveries) 자동 연동 생성 (택배배송인 경우에만 생성)
+    if ((deliveryMethod || '택배배송') === '택배배송' && shippingAddress) {
+      await insertRows('crm_deliveries', [{
+        id: 'DL_' + id + '_' + Math.random().toString().slice(2, 6),
+        customer_name: customerName,
+        customer_phone: customerPhone,
+        address: shippingAddress,
+        courier: '대한통운',
+        tracking_number: '',
+        status: '상품준비중',
+        order_id: id // 원천 주문 ID 기록
+      }]);
+    }
 
     // Trigger automation in the background
     triggerAutomation('order_created', { 
@@ -80,8 +108,10 @@ export async function PATCH(req: Request) {
             payment_method: '카드결제',
             amount: order.total_price || '0',
             payment_date: new Date().toISOString().split('T')[0],
-            status: '결제완료'
+            status: '결제완료',
+            order_id: id // 원천 주문 ID 기록
           }]);
+
         }
 
         if ((updates.status === '배송중' || updates.status === '배송시작') && order.status !== updates.status) {
@@ -97,7 +127,8 @@ export async function PATCH(req: Request) {
             address: order.shipping_address || '',
             courier: '기본택배',
             tracking_number: updates.tracking_number || order.tracking_number || '',
-            status: updates.status
+            status: updates.status,
+            order_id: id // 원천 주문 ID 기록
           }]);
         }
       }
