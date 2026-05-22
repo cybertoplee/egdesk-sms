@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🚀 이지데스크 [FreeSMS] - 스마트 매장 관리 & AI 마케팅 솔루션
 
-## Getting Started
+본 프로젝트는 소상공인 사장님이 매장의 고객 관리(CRM), 문자 발송(FreeSMS), 실시간 예약, 비대면 테이블 오더, 무인 구인 접수, 그리고 AI 기반 마케팅(네이버 블로그 및 인스타그램 AI 포스팅 스튜디오)을 단 하나의 대시보드에서 효율적으로 통제할 수 있는 **스마트 오프라인 매장 어드민 포탈**입니다.
 
-First, run the development server:
+---
 
+## 🌟 최초 실행 및 데이터베이스(물리 테이블) 1분 셋업 가이드
+
+프로젝트를 처음 다운로드하여 구동하시는 사장님 및 개발자분들은 아래 순서대로 셋업을 완료하시면 즉시 모든 기능을 무결하게 사용하실 수 있습니다.
+
+### 1단계: 패키지 설치 및 개발 서버 구동
+먼저 프로젝트 폴더에서 의존성 패키지를 설치한 뒤, 개발용 로컬 서버를 실행합니다.
 ```bash
+# 의존성 패키지 설치 (가상환경 .venv 유지)
+npm install
+
+# 개발 서버(dev) 구동
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2단계: 데이터베이스 자동 구축 및 마이그레이션 (필수 ⭐️)
+로컬 서버가 정상적으로 켜졌다면, 웹 브라우저를 열고 아래 **초기화 엔드포인트에 1회 접속**해 줍니다. 
+이지데스크의 데이터베이스 자가 치유(Auto-Healing) 메커니즘이 가동되어 19종의 모든 물리 테이블이 자동으로 즉시 구축됩니다.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+👉 **초기 테이블 셋업 주소**: `http://localhost:3000/api/setup`
+> 접속 시 화면에 `{"success":true,"message":"Database setup complete."}` 메시지가 나타나면 모든 테이블 셋업이 무결하게 완료된 것입니다.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 3단계: 최고관리자 계정 자동 생성
+그 다음, 대시보드에 로그인할 수 있는 관리자 계정을 활성화하기 위해 아래 엔드포인트에 1회 접속합니다.
+👉 **최고관리자 계정 셋업 주소**: `http://localhost:3000/api/setup-admin`
+> 접속 시 `{"success":true,"message":"Default SUPER_ADMIN created (admin / admin123)"}` 메시지가 나타나며 최고관리자 계정이 활성화됩니다.
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 🔐 초기 로그인 계정 정보
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+테이블 및 관리자 셋업이 완료되었다면 대시보드(`http://localhost:3000`)에 접속하여 아래 계정으로 로그인해 주십시오.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+* **최고관리자 아이디**: `admin`
+* **최고관리자 비밀번호**: `admin123`
+* **권한 등급**: 최고관리자 (`SUPER_ADMIN`)
 
-## Deploy on Vercel
+> [!NOTE]
+> 보안 및 안전한 매장 운영을 위해 최초 로그인 완료 후, 비밀번호를 변경하여 사용하실 것을 적극 권장합니다.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🛠️ 핵심 5대 대고객 모바일 채널 요약
+사장님 대시보드 상단의 **"모바일 채널 제어 센터(Mobile Hub)"**를 통해 아래 5가지 고객 접점 서비스를 QR 코드 및 문자(SMS)로 실시간 배포 및 통제할 수 있습니다.
+
+1. **스마트 주문 스토어 (`/store`)**: AI 음성 비서 탑재 및 단골 혜택 간편 온라인 점포
+2. **매장 테이블 오더 (`/table-order/1`)**: 테이블별 QR코드 부착을 통한 무인 비대면 주문
+3. **실시간 모바일 예약 (`/booking`)**: 전화 응대 없이 고객이 스스로 신청하는 24시간 예약 창구
+4. **구직자 모바일 접수 (`/m/recruitment`)**: 사장님의 아르바이트 및 채용 접수를 자동 수집하는 채용서
+5. **현장 주문 캡처 (`/m/order-capture`)**: 현장 직원이 손님 영수증을 폰카로 촬영하여 AI 스캔 주문서로 연동하는 직원 전용 툴
+
+---
+
+## 📈 기술 스택 및 개발환경
+* **Frontend/Backend**: Next.js (App Router 기반), React, TypeScript
+* **Database**: Local SQLite (`crm_data.db`) 및 이지데스크 API 서버 연동
+* **Styling**: Vanilla CSS 및 TailwindCSS 하이브리드 구성
