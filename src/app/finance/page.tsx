@@ -105,6 +105,17 @@ export default function FinancePage() {
   // 로드된 실제 데이터들
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [stats, setStats] = useState<any>({ totalBalance: 0, activeAccounts: 0 });
+  
+  // 통계 요약 데이터 추가 (금월, 전월, 전전월 및 금년 누적 통계)
+  const [summaryData, setSummaryData] = useState<any>({
+    months: ["", "", ""],
+    cardSummary: [],
+    hometaxSummary: {
+      sales: { m0: 0, m1: 0, m2: 0, yTotal: 0 },
+      purchase: { m0: 0, m1: 0, m2: 0, yTotal: 0 }
+    }
+  });
+
   const [transactionList, setTransactionList] = useState<Transaction[]>([]);
   const [cardTxList, setCardTxList] = useState<CardTransaction[]>([]);
   const [taxInvoiceList, setTaxInvoiceList] = useState<HometaxInvoice[]>([]);
@@ -164,11 +175,18 @@ export default function FinancePage() {
   const fetchFinanceData = useCallback(async () => {
     setLoading(true);
     try {
-      // 1. 공통 정보 (계좌 정보 & 통계 데이터)는 최초 및 전환 시 항상 최신화 유지
-      const accountsRes = await fetch("/api/finance?tab=accounts").then((res) => res.json());
+      // 1. 공통 정보 (계좌 정보 & 통계 데이터) 및 통합 요약 통계는 최초 및 전환 시 항상 최신화 유지
+      const [accountsRes, summaryRes] = await Promise.all([
+        fetch("/api/finance?tab=accounts").then((res) => res.json()),
+        fetch("/api/finance?tab=summary").then((res) => res.json())
+      ]);
+
       if (accountsRes.success) {
         setAccounts(accountsRes.data.accounts || []);
         setStats(accountsRes.data.stats || { totalBalance: 0, activeAccounts: 0 });
+      }
+      if (summaryRes.success) {
+        setSummaryData(summaryRes.data);
       }
 
       const offset = (currentPage - 1) * pageSize;
@@ -302,9 +320,6 @@ export default function FinancePage() {
               실시간 DB 연동
             </span>
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            회사 자산의 은행 거래 내역, 신용 카드 명세서, 그리고 국세청 홈택스 세무 증빙 자료를 통합 모니터링합니다.
-          </p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -319,106 +334,227 @@ export default function FinancePage() {
         </div>
       </div>
 
-      {/* 2. 감성적인 Framer Motion 통계 카드 영역 (도넛 및 게이지 차트 효과) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* 카드 1: 총 계좌 잔고 */}
+      {/* 2. 감성적인 Framer Motion 통계 카드 영역 */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* 카드 1: 보유 계좌별 잔액 및 총합계 */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white rounded-3xl p-6 shadow-xl border border-slate-800"
+          className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white rounded-3xl p-6 shadow-xl border border-slate-800 flex flex-col justify-between min-h-[300px]"
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl"></div>
-          <div className="flex items-center justify-between">
-            <span className="text-slate-400 text-sm font-semibold flex items-center gap-1.5">
-              <Landmark className="w-4 h-4 text-blue-400" />
-              보유 계좌 총 잔액
-            </span>
-            <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded-lg text-xs font-medium">
-              {accounts.length}개 계좌
-            </span>
-          </div>
-
-          <div className="mt-5">
-            <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight">
-              ₩ {stats.totalBalance?.toLocaleString() || "0"}
-            </h3>
-            <div className="mt-4 pt-4 border-t border-slate-700/50 flex items-center justify-between text-xs text-slate-400">
-              <span>주거래 은행: {accounts[0]?.bankName || "미연결"}</span>
-              <span className="flex items-center gap-1 text-emerald-400">
-                <TrendingUp className="w-3.5 h-3.5" />
-                안정자산 등급
+          
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-400 text-xs font-semibold flex items-center gap-1.5">
+                <Landmark className="w-4 h-4 text-blue-400" />
+                보유 계좌별 잔액 및 총합계
+              </span>
+              <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded-lg text-[10px] font-medium">
+                {accounts.length}개 계좌 연동
               </span>
             </div>
+
+            {/* 계좌별 잔액 리스트 영역 */}
+            <div className="max-h-[140px] overflow-y-auto space-y-2 pr-1.5 custom-scrollbar scrollbar-thin scrollbar-thumb-slate-700">
+              {accounts.map((acc) => (
+                <div 
+                  key={acc.id} 
+                  className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
+                >
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 bg-blue-600/30 text-blue-200 rounded border border-blue-500/20">
+                        {acc.bankName}
+                      </span>
+                      <span className="text-white text-xs font-bold">{acc.accountName}</span>
+                    </div>
+                    <p className="text-[10px] text-slate-400 font-mono tracking-wider">{acc.accountNumber}</p>
+                  </div>
+                  <span className="text-xs font-extrabold text-blue-300 font-mono">
+                    ₩ {acc.balance?.toLocaleString()}
+                  </span>
+                </div>
+              ))}
+              {accounts.length === 0 && (
+                <div className="text-center py-8 text-xs text-slate-500">
+                  연동된 은행 계좌가 없습니다.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-4 pt-4 border-t border-white/10">
+            <div className="flex justify-between items-end">
+              <span className="text-xs text-slate-400 font-bold">보유 계좌 합계금액</span>
+              <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold">
+                <TrendingUp className="w-3 h-3" />
+                정상 연동 중
+              </span>
+            </div>
+            <h3 className="text-2xl md:text-3xl font-black tracking-tight text-white mt-1 font-mono">
+              ₩ {stats.totalBalance?.toLocaleString() || "0"}
+            </h3>
           </div>
         </motion.div>
 
-        {/* 카드 2: 당월 카드 사용 총액 */}
+        {/* 카드 2: 카드사별 3개월 지출 규모 & 금년도 누적 */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1 }}
-          className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 relative overflow-hidden"
+          className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between min-h-[300px] relative overflow-hidden"
         >
           <div className="absolute -top-10 -right-10 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl"></div>
-          <div className="flex items-center justify-between">
-            <span className="text-slate-500 text-sm font-semibold flex items-center gap-1.5">
-              <CreditCard className="w-4 h-4 text-amber-500" />
-              카드 지출 규모
-            </span>
-            <span className="text-xs text-slate-400 font-medium">승인 기준</span>
+          
+          <div className="space-y-3.5">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-500 text-xs font-semibold flex items-center gap-1.5">
+                <CreditCard className="w-4 h-4 text-amber-500" />
+                카드사별 3개월 지출 현황
+              </span>
+              <span className="text-[10px] text-slate-400 font-bold bg-slate-50 border border-slate-100 px-1.5 py-0.5 rounded-md">
+                승인 기준 (취소 제외)
+              </span>
+            </div>
+
+            {/* 카드사별 월별 사용액 컴팩트 테이블 */}
+            <div className="max-h-[140px] overflow-y-auto pr-1 scrollbar-thin">
+              <table className="w-full text-left text-[11px] border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-100 text-slate-400 font-bold">
+                    <th className="pb-1.5 font-bold">카드명/번호</th>
+                    <th className="pb-1.5 text-right font-bold">금월({summaryData.months[0]?.split("-")[1] || "5"}월)</th>
+                    <th className="pb-1.5 text-right font-bold">전월({summaryData.months[1]?.split("-")[1] || "4"}월)</th>
+                    <th className="pb-1.5 text-right font-bold">전전월({summaryData.months[2]?.split("-")[1] || "3"}월)</th>
+                    <th className="pb-1.5 text-right font-bold">올해 누계</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {summaryData.cardSummary.map((card: any, idx: number) => (
+                    <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50/50 text-slate-700 font-medium">
+                      <td className="py-2 pr-1">
+                        <div className="font-extrabold text-slate-800 truncate max-w-[80px]">
+                          {card.cardCompanyName}
+                        </div>
+                        <div className="text-[9px] text-slate-400 font-mono">{card.cardNumber}</div>
+                      </td>
+                      <td className="py-2 text-right font-bold text-slate-800">₩{card.m0?.toLocaleString()}</td>
+                      <td className="py-2 text-right text-slate-500">₩{card.m1?.toLocaleString()}</td>
+                      <td className="py-2 text-right text-slate-500">₩{card.m2?.toLocaleString()}</td>
+                      <td className="py-2 text-right font-extrabold text-amber-600">₩{card.yTotal?.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                  {summaryData.cardSummary.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="text-center py-10 text-slate-400 font-semibold">
+                        조회된 신용카드 거래가 없습니다.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          <div className="mt-5">
-            <h3 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight">
-              ₩ {totalCardAmount?.toLocaleString() || "0"}
-            </h3>
+          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+            <div className="space-y-0.5">
+              <span className="text-[10px] text-slate-400 font-bold block">금년도 신용카드 지출총액</span>
+              <span className="text-xl font-black text-slate-800 font-mono block">
+                ₩ {summaryData.cardSummary.reduce((acc: number, curr: any) => acc + (curr.yTotal || 0), 0)?.toLocaleString()}
+              </span>
+            </div>
             
-            {/* Tailwind를 활용한 세련된 카드 게이지 애니메이션 */}
-            <div className="mt-5 space-y-1">
-              <div className="flex justify-between text-[11px] text-slate-400 font-semibold">
-                <span>한도 대비 누적 사용률</span>
-                <span>{(totalCardAmount > 0) ? Math.min(100, Math.round((totalCardAmount / 15000000) * 100)) : 0}%</span>
-              </div>
-              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${(totalCardAmount > 0) ? Math.min(100, Math.round((totalCardAmount / 15000000) * 100)) : 0}%` }}
-                  transition={{ duration: 0.8, ease: "easeOut" }}
-                  className="bg-gradient-to-r from-amber-500 to-orange-500 h-full rounded-full"
-                ></motion.div>
-              </div>
+            <div className="text-right space-y-0.5">
+              <span className="text-[10px] text-slate-400 font-bold block">이번 달 전체지출</span>
+              <span className="text-xs font-bold text-slate-600 font-mono block">
+                ₩ {summaryData.cardSummary.reduce((acc: number, curr: any) => acc + (curr.m0 || 0), 0)?.toLocaleString()}
+              </span>
             </div>
           </div>
         </motion.div>
 
-        {/* 카드 3: 당월 국세청 홈택스 통합 현황 */}
+        {/* 카드 3: 홈택스 매출/매입 3개월 추이 & 누적 대비표 */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.2 }}
-          className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 relative overflow-hidden"
+          className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between min-h-[300px] relative overflow-hidden"
         >
           <div className="absolute -top-10 -right-10 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl"></div>
-          <div className="flex items-center justify-between">
-            <span className="text-slate-500 text-sm font-semibold flex items-center gap-1.5">
-              <Receipt className="w-4 h-4 text-emerald-500" />
-              홈택스 당월 매출/매입
-            </span>
-            <span className="text-xs text-slate-400 font-medium">세무 증빙액</span>
-          </div>
-
-          <div className="mt-4 grid grid-cols-2 gap-4">
-            <div className="bg-slate-50/60 p-3 rounded-2xl border border-slate-100">
-              <span className="text-[10px] text-slate-400 font-bold block">당월 누적 매출</span>
-              <span className="text-base font-extrabold text-emerald-600 block mt-0.5">
-                ₩ {hometaxStats.salesTotal?.toLocaleString()}
+          
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-500 text-xs font-semibold flex items-center gap-1.5">
+                <Receipt className="w-4 h-4 text-emerald-500" />
+                홈택스 매출·매입 3개월 비교
+              </span>
+              <span className="text-[10px] text-slate-400 font-bold bg-slate-50 border border-slate-100 px-1.5 py-0.5 rounded-md">
+                세무 매칭액
               </span>
             </div>
-            <div className="bg-slate-50/60 p-3 rounded-2xl border border-slate-100">
-              <span className="text-[10px] text-slate-400 font-bold block">당월 누적 매입</span>
-              <span className="text-base font-extrabold text-rose-500 block mt-0.5">
-                ₩ {hometaxStats.purchaseTotal?.toLocaleString()}
+
+            {/* 매출 대 매입 대칭 레이아웃 */}
+            <div className="grid grid-cols-2 gap-4">
+              {/* 매출액 파트 */}
+              <div className="space-y-2 p-2.5 rounded-2xl bg-emerald-50/40 border border-emerald-100/50">
+                <span className="text-[10px] font-bold text-emerald-700 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  매출액 (Sales)
+                </span>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center text-[10px]">
+                    <span className="text-slate-400 font-medium">금월({summaryData.months[0]?.split("-")[1] || "5"}월)</span>
+                    <span className="font-extrabold text-emerald-600 font-mono">₩{summaryData.hometaxSummary?.sales?.m0?.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-[10px]">
+                    <span className="text-slate-400 font-medium">전월({summaryData.months[1]?.split("-")[1] || "4"}월)</span>
+                    <span className="font-bold text-slate-600 font-mono">₩{summaryData.hometaxSummary?.sales?.m1?.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-[10px]">
+                    <span className="text-slate-400 font-medium">전전월({summaryData.months[2]?.split("-")[1] || "3"}월)</span>
+                    <span className="font-bold text-slate-600 font-mono">₩{summaryData.hometaxSummary?.sales?.m2?.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 매입액 파트 */}
+              <div className="space-y-2 p-2.5 rounded-2xl bg-rose-50/30 border border-rose-100/50">
+                <span className="text-[10px] font-bold text-rose-700 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+                  매입액 (Purchase)
+                </span>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center text-[10px]">
+                    <span className="text-slate-400 font-medium">금월({summaryData.months[0]?.split("-")[1] || "5"}월)</span>
+                    <span className="font-extrabold text-rose-500 font-mono">₩{summaryData.hometaxSummary?.purchase?.m0?.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-[10px]">
+                    <span className="text-slate-400 font-medium">전월({summaryData.months[1]?.split("-")[1] || "4"}월)</span>
+                    <span className="font-bold text-slate-600 font-mono">₩{summaryData.hometaxSummary?.purchase?.m1?.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-[10px]">
+                    <span className="text-slate-400 font-medium">전전월({summaryData.months[2]?.split("-")[1] || "3"}월)</span>
+                    <span className="font-bold text-slate-600 font-mono">₩{summaryData.hometaxSummary?.purchase?.m2?.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 pt-3 border-t border-slate-100 grid grid-cols-2 gap-4">
+            <div className="space-y-0.5">
+              <span className="text-[10px] text-slate-400 font-bold block">올해 매출액 누계</span>
+              <span className="text-lg font-black text-emerald-600 font-mono block">
+                ₩ {summaryData.hometaxSummary?.sales?.yTotal?.toLocaleString()}
+              </span>
+            </div>
+            
+            <div className="space-y-0.5">
+              <span className="text-[10px] text-slate-400 font-bold block">올해 매입액 누계</span>
+              <span className="text-lg font-black text-rose-500 font-mono block">
+                ₩ {summaryData.hometaxSummary?.purchase?.yTotal?.toLocaleString()}
               </span>
             </div>
           </div>
