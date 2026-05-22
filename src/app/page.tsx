@@ -1,5 +1,7 @@
 import { Users, MessageSquare, CheckCircle, Clock, AlertTriangle } from "lucide-react";
 import { queryTable } from "@/../egdesk-helpers";
+import MobileHubWidget from "@/components/MobileHubWidget";
+
 
 // Next.js 캐싱 비활성화 (항상 최신 데이터 유지)
 export const dynamic = 'force-dynamic';
@@ -43,6 +45,9 @@ export default async function Home() {
           연동 상태: <span className="text-green-500 font-semibold">정상 (Google 메시지)</span>
         </div>
       </div>
+
+      {/* 모바일 채널 제어 센터 */}
+      <MobileHubWidget />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
