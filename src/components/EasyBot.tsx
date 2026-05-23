@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, Sparkles, X, Send, RotateCcw, Bot, Terminal, ShieldAlert } from 'lucide-react';
+import { MessageSquare, Sparkles, X, Send, RotateCcw, Bot, Terminal, ShieldAlert, Maximize2, Minimize2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Message {
@@ -323,6 +323,7 @@ function UserMarkdown({ content }: { content: string }) {
 
 export default function EasyBot() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isWide, setIsWide] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputVal, setInputVal] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -348,7 +349,11 @@ export default function EasyBot() {
 
     // 화면 너비 동적 체크 (Tailwind v4 미디어쿼리 빌드 누락 이슈 우회)
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 640);
+      const mobile = window.innerWidth < 640;
+      setIsMobile(mobile);
+      if (mobile) {
+        setIsWide(false);
+      }
     };
     handleResize();
     window.addEventListener('resize', handleResize);
@@ -550,7 +555,9 @@ export default function EasyBot() {
             className={`fixed z-50 flex flex-col overflow-hidden bg-white/95 border border-slate-200/90 shadow-[0_25px_60px_rgba(0,0,0,0.12)] backdrop-blur-xl transition-all duration-300 ${
               isMobile
                 ? 'bottom-0 right-0 w-full h-full rounded-none'
-                : 'bottom-24 right-6 w-[480px] min-w-[360px] max-w-[90vw] h-[680px] min-h-[500px] max-h-[85vh] rounded-[28px]'
+                : isWide
+                  ? 'bottom-24 right-6 w-[820px] min-w-[480px] max-w-[95vw] h-[680px] min-h-[500px] max-h-[85vh] rounded-[28px]'
+                  : 'bottom-24 right-6 w-[480px] min-w-[360px] max-w-[90vw] h-[680px] min-h-[500px] max-h-[85vh] rounded-[28px]'
             }`}
           >
             {/* 위젯 헤더 (패딩을 px-6 py-5로 크게 늘려 넉넉한 여백 확보) */}
@@ -587,6 +594,15 @@ export default function EasyBot() {
 
               {/* 우측 아이콘 버튼 영역 여백 확보 */}
               <div className="flex items-center gap-2">
+                {!isMobile && (
+                  <button
+                    onClick={() => setIsWide(!isWide)}
+                    className="p-2.5 rounded-xl text-slate-400 hover:bg-slate-50 hover:text-slate-700 transition-colors flex items-center justify-center"
+                    title={isWide ? "기본 모드로 축소" : "와이드 모드로 확장"}
+                  >
+                    {isWide ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
+                  </button>
+                )}
                 <button
                   onClick={handleReset}
                   className="p-2.5 rounded-xl text-slate-400 hover:bg-slate-50 hover:text-slate-700 transition-colors"
