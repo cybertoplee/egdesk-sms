@@ -64,7 +64,7 @@ export default function AiSettingsCard() {
         <Bot className="w-32 h-32 text-indigo-500" />
       </div>
       <div className="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-5">
-        <div>
+        <div className="flex-1 min-w-[280px]">
           <h2 className="text-xl font-bold text-indigo-900 flex items-center">
             <Bot className="w-6 h-6 mr-2 text-indigo-600" /> 
             AI 비서 및 이지봇 모델 설정

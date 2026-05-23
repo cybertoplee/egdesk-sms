@@ -5,7 +5,7 @@ import AiSettingsCard from "../AiSettingsCard";
 
 export default function SettingsPage() {
   return (
-    <div className="p-8 max-w-5xl mx-auto">
+    <div className="p-8 w-full max-w-none">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-800 flex items-center">
           <Settings className="w-8 h-8 text-slate-500 mr-3" />
