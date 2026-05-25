@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { decodeJwt } from 'jose';
-import { LogOut } from 'lucide-react';
+import { LogOut, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 import SidebarMenu from './SidebarMenu';
 
 export default async function Sidebar() {
@@ -32,18 +33,19 @@ export default async function Sidebar() {
           scrollbar-width: none !important;
         }
       `}} />
-      <div className="p-6 border-b border-slate-800">
+      <Link href="/" className="block p-6 border-b border-slate-800 hover:bg-slate-800/50 transition-colors cursor-pointer no-underline">
         <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400">
           EGDESK SMS
         </h1>
         <p className="text-sm text-slate-400 mt-1">평생 무료 문자 발송 시스템</p>
-      </div>
+      </Link>
       
       <SidebarMenu userRole={userRole} />
 
-      <div className="p-4 border-t border-slate-800 flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-sm">
+      <div className="p-4 border-t border-slate-800">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-sm">
             {userName[0] || 'U'}
           </div>
           <div className="flex flex-col">
@@ -63,6 +65,7 @@ export default async function Sidebar() {
             <LogOut className="w-4 h-4" />
           </button>
         </form>
+        </div>
       </div>
     </div>
   );

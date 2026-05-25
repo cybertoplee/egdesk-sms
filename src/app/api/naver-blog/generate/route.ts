@@ -9,6 +9,9 @@ export async function POST(req: Request) {
     const settingsRes = await queryTable('system_settings', { filters: { key: 'google_ai_api_key' } });
     const apiKey = settingsRes.rows && settingsRes.rows.length > 0 ? settingsRes.rows[0].value : null;
 
+    const modelRes = await queryTable('system_settings', { filters: { key: 'google_ai_model' } });
+    const selectedModel = modelRes.rows && modelRes.rows.length > 0 && modelRes.rows[0].value ? modelRes.rows[0].value : 'gemini-1.5-flash';
+
     // 2. 상품 정보 조회 (선택 사항)
     let productInfo = '';
     let productName = '신상품';
@@ -72,7 +75,7 @@ ${prompt || '이 상품을 블로그 포스팅으로 상세하게 소개해주�
 
     if (apiKey) {
       try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'

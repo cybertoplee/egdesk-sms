@@ -45,7 +45,7 @@ export async function POST(req: Request) {
     const modelRes = await queryTable('system_settings', { filters: { key: 'google_ai_model' } });
     const selectedModel = modelRes.rows && modelRes.rows.length > 0 && modelRes.rows[0].value
       ? modelRes.rows[0].value
-      : 'gemini-3.5-flash';
+      : 'gemini-1.5-flash';
 
     // 2. 현재 DB에 어떤 테이블들이 존재하는지 동적으로 리스트업
     let dbTablesInfo = '알 수 없음';

@@ -92,6 +92,7 @@ export default function SidebarMenu({ userRole }: SidebarMenuProps) {
     { href: "/instagram", label: "인스타그램 AI 마케팅", icon: InstagramIcon, color: "text-[#ff007f]" },
     { href: "/naver-blog", label: "N-BLOG AI 포스팅", icon: NaverIcon, color: "text-[#2db400]" },
     { href: "/youtube-shorts", label: "YOUTUBE 쇼츠 AI", icon: YoutubeIcon, color: "text-[#FF0000]" },
+    { href: "/operators", label: "운영자 관리", icon: UserCog, color: "text-indigo-400" },
   ];
 
   return (
@@ -100,46 +101,56 @@ export default function SidebarMenu({ userRole }: SidebarMenuProps) {
         {menuItems.map((item) => {
           const active = isActive(item.href);
           const Icon = item.icon;
+          
+          let isAllowed = false;
+          if (userRole === 'DEVELOPER' || userRole === 'SUPER_ADMIN') {
+            isAllowed = true;
+          } else if (userRole === 'ADMIN') {
+            const allowedMenus = ["대시보드", "무료 문자 발송", "발송내역 모니터링", "고객 관리"];
+            isAllowed = allowedMenus.includes(item.label);
+          } else if (userRole === 'USER') {
+            const allowedMenus = ["대시보드", "무료 문자 발송", "발송내역 모니터링"];
+            isAllowed = allowedMenus.includes(item.label);
+          }
+          
+          const isDisabled = !isAllowed;
 
           return (
             <Link
               key={item.href}
-              href={item.href}
+              href={isDisabled ? "#" : item.href}
               className={`flex items-center space-x-3 p-3 rounded-lg transition-all ${
-                active
-                  ? "bg-blue-600 text-white font-semibold shadow-md shadow-blue-500/10 scale-[1.02]"
-                  : "text-slate-300 hover:bg-slate-800 hover:text-white hover:scale-[1.01]"
+                isDisabled 
+                  ? "opacity-30 cursor-not-allowed pointer-events-none"
+                  : active
+                    ? "bg-blue-600 text-white font-semibold shadow-md shadow-blue-500/10 scale-[1.02]"
+                    : "text-slate-300 hover:bg-slate-800 hover:text-white hover:scale-[1.01]"
               }`}
+              onClick={(e) => {
+                if (isDisabled) e.preventDefault();
+              }}
             >
-              <Icon className={`w-5 h-5 shrink-0 transition-colors ${active ? "text-white" : item.color}`} />
+              <Icon className={`w-5 h-5 shrink-0 transition-colors ${active && !isDisabled ? "text-white" : item.color}`} />
               <span>{item.label}</span>
             </Link>
           );
         })}
       </nav>
       <div className="p-4 border-t border-slate-800 space-y-2">
-        {userRole === "SUPER_ADMIN" && (
-          <Link
-            href="/operators"
-            className={`flex items-center space-x-3 p-3 rounded-lg transition-all ${
-              isActive("/operators")
+        <Link
+          href={(userRole === 'DEVELOPER' || userRole === 'SUPER_ADMIN') ? "/settings" : "#"}
+          className={`flex items-center space-x-3 p-3 rounded-lg transition-all ${
+            (userRole !== 'DEVELOPER' && userRole !== 'SUPER_ADMIN')
+              ? "opacity-30 cursor-not-allowed pointer-events-none"
+              : isActive("/settings")
                 ? "bg-blue-600 text-white font-semibold shadow-md shadow-blue-500/10 scale-[1.02]"
                 : "text-slate-300 hover:bg-slate-800 hover:text-white hover:scale-[1.01]"
-            }`}
-          >
-            <UserCog className={`w-5 h-5 shrink-0 ${isActive("/operators") ? "text-white" : "text-indigo-400"}`} />
-            <span>운영자 관리</span>
-          </Link>
-        )}
-        <Link
-          href="/settings"
-          className={`flex items-center space-x-3 p-3 rounded-lg transition-all ${
-            isActive("/settings")
-              ? "bg-blue-600 text-white font-semibold shadow-md shadow-blue-500/10 scale-[1.02]"
-              : "text-slate-300 hover:bg-slate-800 hover:text-white hover:scale-[1.01]"
           }`}
+          onClick={(e) => {
+            if (userRole !== 'DEVELOPER' && userRole !== 'SUPER_ADMIN') e.preventDefault();
+          }}
         >
-          <Settings className={`w-5 h-5 shrink-0 ${isActive("/settings") ? "text-white" : "text-slate-400"}`} />
+          <Settings className={`w-5 h-5 shrink-0 ${isActive("/settings") && (userRole === 'DEVELOPER' || userRole === 'SUPER_ADMIN') ? "text-white" : "text-slate-400"}`} />
           <span>시스템 설정</span>
         </Link>
       </div>

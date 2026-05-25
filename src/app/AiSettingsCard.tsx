@@ -4,7 +4,7 @@ import { Bot, Save, Check, KeyRound, Cpu } from "lucide-react";
 
 export default function AiSettingsCard() {
   const [apiKey, setApiKey] = useState("");
-  const [aiModel, setAiModel] = useState("gemini-3.5-flash");
+  const [aiModel, setAiModel] = useState("gemini-1.5-flash");
   const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
@@ -105,7 +105,7 @@ export default function AiSettingsCard() {
                 className="flex-1 w-full py-2.5 outline-none text-xs font-bold text-indigo-950 cursor-pointer appearance-none bg-transparent text-ellipsis"
                 title="Gemini AI 모델 선택"
               >
-                <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+                <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
                 <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
                 <option value="gemini-1.5-flash-latest">Gemini 1.5 Flash</option>
                 <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>

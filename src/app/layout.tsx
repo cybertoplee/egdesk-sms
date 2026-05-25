@@ -31,6 +31,16 @@ export default function RootLayout({
             {children}
           </MainContentWrapper>
         </main>
+        
+        {/* Floating 나가기 (Exit) button */}
+        <a 
+          href="http://woorinara.ai.kr/#portfolio" 
+          className="fixed bottom-6 right-24 z-50 flex h-14 items-center justify-center space-x-2 bg-slate-900 text-white px-5 rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:bg-slate-800 transition-colors focus:outline-none"
+        >
+          <span className="text-sm font-bold">나가기</span>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+        </a>
+
         <EasyBot />
       </body>
     </html>

@@ -13,7 +13,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: '아이디와 비밀번호를 모두 입력해주세요.' }, { status: 400 });
     }
 
-    // 1. 운영자 조회
+    // 1. DB에서 운영자 조회
     const result = await queryTable('crm_operators', { filters: { username } });
     if (!result.rows || result.rows.length === 0) {
       return NextResponse.json({ success: false, error: '존재하지 않는 계정입니다.' }, { status: 401 });

@@ -9,6 +9,9 @@ export async function POST(req: Request) {
     const settingsRes = await queryTable('system_settings', { filters: { key: 'google_ai_api_key' } });
     const apiKey = settingsRes.rows && settingsRes.rows.length > 0 ? settingsRes.rows[0].value : null;
 
+    const modelRes = await queryTable('system_settings', { filters: { key: 'google_ai_model' } });
+    const selectedModel = modelRes.rows && modelRes.rows.length > 0 && modelRes.rows[0].value ? modelRes.rows[0].value : 'gemini-1.5-flash';
+
     if (!apiKey) {
       return NextResponse.json({ success: false, error: '대시보드에서 구글 AI API 키를 먼저 등록해주세요.' }, { status: 400 });
     }
@@ -36,7 +39,7 @@ You MUST output your response in valid JSON format ONLY, exactly like this:
 `;
 
     // Fetch call to Google Gemini API
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
